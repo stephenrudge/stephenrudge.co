@@ -1,7 +1,13 @@
 import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
+import readingTime from "reading-time";
 import type { Post, PostFrontmatter } from "@/types";
+import {
+  githubDeletePostFile,
+  githubUpsertPostFile,
+  shouldUseGitHubContent,
+} from "@/lib/github-content";
 import { getPostBySlug } from "@/lib/posts";
 import { slugify } from "@/lib/slug";
 
@@ -12,6 +18,15 @@ const postsDirectory = path.join(process.cwd(), "content/posts");
 export type PostInput = PostFrontmatter & {
   slug: string;
   content: string;
+};
+
+export type WriteResult = {
+  post: Post;
+  via: "local" | "github";
+};
+
+export type DeleteResult = {
+  via: "local" | "github";
 };
 
 function ensurePostsDir() {
@@ -30,7 +45,14 @@ function serializePost(input: PostInput) {
   });
 }
 
-export function writePost(input: PostInput, previousSlug?: string): Post {
+function toPost(input: PostInput): Post {
+  return {
+    ...input,
+    readingTime: readingTime(input.content).text,
+  };
+}
+
+function writePostLocal(input: PostInput, previousSlug?: string): Post {
   ensurePostsDir();
 
   const slug = slugify(input.slug || input.title);
@@ -56,12 +78,52 @@ export function writePost(input: PostInput, previousSlug?: string): Post {
   return saved;
 }
 
-export function deletePost(slug: string) {
+function deletePostLocal(slug: string) {
   const filePath = path.join(postsDirectory, `${slug}.mdx`);
   if (!fs.existsSync(filePath)) {
     throw new Error("Post not found.");
   }
   fs.unlinkSync(filePath);
+}
+
+export async function writePost(
+  input: PostInput,
+  previousSlug?: string,
+): Promise<WriteResult> {
+  const slug = slugify(input.slug || input.title);
+  if (!slug) {
+    throw new Error("A valid slug is required.");
+  }
+
+  const normalized = { ...input, slug };
+  const serialized = serializePost(normalized);
+
+  if (shouldUseGitHubContent()) {
+    const existing = getPostBySlug(slug);
+    if (existing && existing.slug !== previousSlug) {
+      throw new Error(`A post with slug "${slug}" already exists.`);
+    }
+
+    await githubUpsertPostFile(slug, serialized);
+
+    if (previousSlug && previousSlug !== slug) {
+      await githubDeletePostFile(previousSlug);
+    }
+
+    return { post: toPost(normalized), via: "github" };
+  }
+
+  return { post: writePostLocal(normalized, previousSlug), via: "local" };
+}
+
+export async function deletePost(slug: string): Promise<DeleteResult> {
+  if (shouldUseGitHubContent()) {
+    await githubDeletePostFile(slug);
+    return { via: "github" };
+  }
+
+  deletePostLocal(slug);
+  return { via: "local" };
 }
 
 export function validatePostInput(body: unknown): PostInput {

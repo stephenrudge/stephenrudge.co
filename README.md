@@ -55,7 +55,21 @@ Write and publish stories at [http://localhost:3000/admin](http://localhost:3000
 
 Default local password: `changeme`
 
-**Hosting note:** the admin writes files to disk. That works for local/dev and hosts with a persistent filesystem. On serverless platforms (e.g. Vercel) published files won’t persist unless you add external storage or a database.
+### Production (Vercel)
+
+Vercel’s filesystem is **read-only**, so admin create/edit/delete uses the **GitHub API** and commits to your repo. Vercel then redeploys automatically.
+
+In Vercel → Project → Settings → Environment Variables, add:
+
+| Variable | Value |
+|----------|--------|
+| `ADMIN_PASSWORD` | your admin password |
+| `ADMIN_SECRET` | long random string |
+| `GITHUB_TOKEN` | fine-grained PAT with **Contents: Read and write** on this repo |
+| `GITHUB_REPO` | `stephenrudge/stephenrudge.co` |
+| `GITHUB_BRANCH` | `main` |
+
+Create the token at [GitHub → Settings → Developer settings → Fine-grained tokens](https://github.com/settings/personal-access-tokens). After changing env vars, **redeploy** the project.
 
 ## Scripts
 

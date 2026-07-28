@@ -144,6 +144,8 @@ export function PostEditor({
     const data = (await response.json().catch(() => null)) as {
       error?: string;
       post?: Post;
+      message?: string;
+      via?: "local" | "github";
     } | null;
 
     setSaving(false);
@@ -151,6 +153,10 @@ export function PostEditor({
     if (!response.ok || !data?.post) {
       setError(data?.error || "Could not save story.");
       return;
+    }
+
+    if (data.via === "github" && data.message) {
+      window.alert(data.message);
     }
 
     router.push("/admin");
@@ -168,14 +174,20 @@ export function PostEditor({
     const response = await fetch(`/api/admin/posts/${initialPost.slug}`, {
       method: "DELETE",
     });
+    const data = (await response.json().catch(() => null)) as {
+      error?: string;
+      message?: string;
+      via?: "local" | "github";
+    } | null;
     setDeleting(false);
 
     if (!response.ok) {
-      const data = (await response.json().catch(() => null)) as {
-        error?: string;
-      } | null;
       setError(data?.error || "Could not delete story.");
       return;
+    }
+
+    if (data?.via === "github" && data.message) {
+      window.alert(data.message);
     }
 
     router.push("/admin");
@@ -190,7 +202,7 @@ export function PostEditor({
             {mode === "create" ? "New story" : "Edit story"}
           </h1>
           <p className="mt-1 text-sm text-zinc-500">
-            Write in Markdown. Published stories appear on the public site.
+            Write in Markdown. On Vercel, saves commit to GitHub and redeploy.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

@@ -26,7 +26,8 @@ export default async function AdminDashboardPage() {
             Stories
           </h1>
           <p className="mt-1 text-sm text-zinc-500">
-            {posts.length} published {posts.length === 1 ? "story" : "stories"}
+            {posts.length} published {posts.length === 1 ? "story" : "stories"}.
+            On Vercel, changes commit to GitHub and redeploy in about a minute.
           </p>
         </div>
         <Button asChild>

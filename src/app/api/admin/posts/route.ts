@@ -27,9 +27,19 @@ export async function POST(request: Request) {
 
   try {
     const input = validatePostInput(await request.json());
-    const post = writePost(input);
+    const { post, via } = await writePost(input);
     revalidatePublic(post.slug);
-    return NextResponse.json({ post }, { status: 201 });
+    return NextResponse.json(
+      {
+        post,
+        via,
+        message:
+          via === "github"
+            ? "Saved to GitHub. Vercel will redeploy shortly."
+            : "Saved locally.",
+      },
+      { status: 201 },
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to save.";
     return NextResponse.json({ error: message }, { status: 400 });

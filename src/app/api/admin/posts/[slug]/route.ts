@@ -43,9 +43,16 @@ export async function PUT(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Post not found." }, { status: 404 });
     }
     const input = validatePostInput(await request.json());
-    const post = writePost(input, previousSlug);
+    const { post, via } = await writePost(input, previousSlug);
     revalidatePublic(post.slug, previousSlug);
-    return NextResponse.json({ post });
+    return NextResponse.json({
+      post,
+      via,
+      message:
+        via === "github"
+          ? "Saved to GitHub. Vercel will redeploy shortly."
+          : "Saved locally.",
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to save.";
     return NextResponse.json({ error: message }, { status: 400 });
@@ -60,9 +67,16 @@ export async function DELETE(_request: Request, context: RouteContext) {
   const { slug } = await context.params;
 
   try {
-    deletePost(slug);
+    const { via } = await deletePost(slug);
     revalidatePublic(slug);
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({
+      ok: true,
+      via,
+      message:
+        via === "github"
+          ? "Deleted on GitHub. Vercel will redeploy shortly."
+          : "Deleted locally.",
+    });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to delete.";
