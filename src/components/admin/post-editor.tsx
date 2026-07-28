@@ -1,11 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { CoverImageField } from "@/components/admin/cover-image-field";
+import { InlineImageUpload } from "@/components/admin/inline-image-upload";
+import { MDXImage } from "@/components/mdx/mdx-image";
 import { REGIONS, TRIP_TYPES } from "@/lib/filters";
 import { slugify } from "@/lib/slug";
 import {
@@ -91,6 +93,7 @@ export function PostEditor({
   initialPost?: Post;
 }) {
   const router = useRouter();
+  const contentRef = useRef<HTMLTextAreaElement>(null);
   const [values, setValues] = useState<PostFormValues>(
     initialPost ? postToValues(initialPost) : emptyValues,
   );
@@ -125,6 +128,32 @@ export function PostEditor({
     value: PostFormValues[K],
   ) {
     setValues((current) => ({ ...current, [key]: value }));
+  }
+
+  function insertMarkdownIntoContent(snippet: string) {
+    const el = contentRef.current;
+    const current = values.content;
+    const start = el?.selectionStart ?? current.length;
+    const end = el?.selectionEnd ?? current.length;
+    const before = current.slice(0, start);
+    const after = current.slice(end);
+
+    let prefix = "";
+    if (before.length > 0 && !before.endsWith("\n\n")) {
+      prefix = before.endsWith("\n") ? "\n" : "\n\n";
+    }
+
+    const block = `${prefix}${snippet}\n\n`;
+    update("content", `${before}${block}${after}`);
+    setTab("write");
+
+    const cursor = before.length + block.length;
+    requestAnimationFrame(() => {
+      const textarea = contentRef.current;
+      if (!textarea) return;
+      textarea.focus();
+      textarea.setSelectionRange(cursor, cursor);
+    });
   }
 
   function toggleTripType(type: TripType) {
@@ -487,16 +516,34 @@ export function PostEditor({
           </TabButton>
         </div>
         {tab === "write" ? (
-          <textarea
-            value={values.content}
-            onChange={(event) => update("content", event.target.value)}
-            placeholder={"## Opening\n\nTell the story…\n\n> A memorable line"}
-            className="min-h-[420px] w-full resize-y bg-transparent px-4 py-4 font-mono text-sm outline-none"
-          />
+          <>
+            <InlineImageUpload onInsert={insertMarkdownIntoContent} />
+            <textarea
+              ref={contentRef}
+              value={values.content}
+              onChange={(event) => update("content", event.target.value)}
+              placeholder={
+                "## Opening\n\nTell the story…\n\n![Trail view](/uploads/photo.jpg)\n\n> A memorable line"
+              }
+              className="min-h-[420px] w-full resize-y bg-transparent px-4 py-4 font-mono text-sm outline-none"
+            />
+          </>
         ) : (
           <div className="prose prose-zinc dark:prose-invert max-w-none px-4 py-4">
             {values.content ? (
-              <ReactMarkdown>{values.content}</ReactMarkdown>
+              <ReactMarkdown
+                components={{
+                  img: ({ src, alt, title }) => (
+                    <MDXImage
+                      src={typeof src === "string" ? src : undefined}
+                      alt={alt || ""}
+                      title={title}
+                    />
+                  ),
+                }}
+              >
+                {values.content}
+              </ReactMarkdown>
             ) : (
               <p className="text-zinc-500">Nothing to preview yet.</p>
             )}

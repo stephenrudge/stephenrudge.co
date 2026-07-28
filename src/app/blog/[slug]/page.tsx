@@ -7,6 +7,7 @@ import { ArrowLeft, ArrowRight, Clock, MapPin } from "lucide-react";
 import { ShareButtons } from "@/components/share-buttons";
 import { PostMap } from "@/components/map/map-section";
 import { Gallery } from "@/components/gallery";
+import { mdxComponents } from "@/lib/mdx-components";
 import { getAdjacentPosts, getAllPosts, getPostBySlug } from "@/lib/posts";
 import { formatDate } from "@/lib/utils";
 
@@ -36,10 +37,6 @@ export async function generateMetadata({
     },
   };
 }
-
-const components = {
-  Gallery,
-};
 
 export default async function BlogPostPage({ params }: PageProps) {
   const { slug } = await params;
@@ -84,7 +81,7 @@ export default async function BlogPostPage({ params }: PageProps) {
 
       <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6">
         <div className="prose prose-zinc dark:prose-invert max-w-none prose-headings:font-serif prose-a:text-accent">
-          <MDXRemote source={post.content} components={components} />
+          <MDXRemote source={post.content} components={mdxComponents} />
         </div>
 
         {post.gallery && post.gallery.length > 0 ? (
