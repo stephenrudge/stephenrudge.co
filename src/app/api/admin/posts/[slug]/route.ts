@@ -24,7 +24,7 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 
   const { slug } = await context.params;
-  const post = getPostBySlug(slug);
+  const post = getPostBySlug(slug, { includeDrafts: true });
   if (!post) {
     return NextResponse.json({ error: "Post not found." }, { status: 404 });
   }
@@ -39,7 +39,7 @@ export async function PUT(request: Request, context: RouteContext) {
   const { slug: previousSlug } = await context.params;
 
   try {
-    if (!getPostBySlug(previousSlug)) {
+    if (!getPostBySlug(previousSlug, { includeDrafts: true })) {
       return NextResponse.json({ error: "Post not found." }, { status: 404 });
     }
     const input = validatePostInput(await request.json());

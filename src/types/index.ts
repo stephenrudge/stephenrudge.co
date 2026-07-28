@@ -32,6 +32,8 @@ export interface PostFrontmatter {
   lat: number;
   lng: number;
   featured?: boolean;
+  /** When true, the story is hidden from the public site. */
+  draft?: boolean;
   gallery?: GalleryImage[];
 }
 

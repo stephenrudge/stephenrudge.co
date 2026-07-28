@@ -41,7 +41,8 @@ function serializePost(input: PostInput) {
     ...frontmatter,
     tripType: frontmatter.tripType,
     tags: frontmatter.tags,
-    featured: Boolean(frontmatter.featured),
+    featured: Boolean(frontmatter.featured) && !frontmatter.draft,
+    draft: Boolean(frontmatter.draft),
   });
 }
 
@@ -65,7 +66,7 @@ function writePostLocal(input: PostInput, previousSlug?: string): Post {
     if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
   }
 
-  const existing = getPostBySlug(slug);
+  const existing = getPostBySlug(slug, { includeDrafts: true });
   if (existing && existing.slug !== previousSlug) {
     throw new Error(`A post with slug "${slug}" already exists.`);
   }
@@ -73,7 +74,7 @@ function writePostLocal(input: PostInput, previousSlug?: string): Post {
   const filePath = path.join(postsDirectory, `${slug}.mdx`);
   fs.writeFileSync(filePath, serializePost({ ...input, slug }), "utf8");
 
-  const saved = getPostBySlug(slug);
+  const saved = getPostBySlug(slug, { includeDrafts: true });
   if (!saved) throw new Error("Failed to save post.");
   return saved;
 }
@@ -99,7 +100,7 @@ export async function writePost(
   const serialized = serializePost(normalized);
 
   if (shouldUseGitHubContent()) {
-    const existing = getPostBySlug(slug);
+    const existing = getPostBySlug(slug, { includeDrafts: true });
     if (existing && existing.slug !== previousSlug) {
       throw new Error(`A post with slug "${slug}" already exists.`);
     }
@@ -132,6 +133,7 @@ export function validatePostInput(body: unknown): PostInput {
   }
 
   const data = body as Record<string, unknown>;
+  const draft = Boolean(data.draft);
   const title = String(data.title || "").trim();
   const content = String(data.content || "").trim();
   const excerpt = String(data.excerpt || "").trim();
@@ -144,17 +146,22 @@ export function validatePostInput(body: unknown): PostInput {
   const slug = slugify(String(data.slug || title));
 
   if (!title) throw new Error("Title is required.");
-  if (!content) throw new Error("Story content is required.");
-  if (!excerpt) throw new Error("Excerpt is required.");
-  if (!location) throw new Error("Location is required.");
-  if (!country) throw new Error("Country is required.");
-  if (!coverImage) throw new Error("Cover image is required.");
-  if (!date) throw new Error("Date is required.");
-  if (!region) throw new Error("Region is required.");
+
+  if (!draft) {
+    if (!content) throw new Error("Story content is required.");
+    if (!excerpt) throw new Error("Excerpt is required.");
+    if (!location) throw new Error("Location is required.");
+    if (!country) throw new Error("Country is required.");
+    if (!coverImage) throw new Error("Cover image is required.");
+    if (!date) throw new Error("Date is required.");
+    if (!region) throw new Error("Region is required.");
+  }
 
   const lat = Number(data.lat);
   const lng = Number(data.lng);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+  const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
+
+  if (!draft && !hasCoords) {
     throw new Error("Valid latitude and longitude are required.");
   }
 
@@ -175,18 +182,25 @@ export function validatePostInput(body: unknown): PostInput {
   return {
     slug,
     title,
-    date,
-    excerpt,
-    location,
-    country,
+    date: date || new Date().toISOString().slice(0, 10),
+    excerpt: excerpt || (draft ? "Draft in progress" : excerpt),
+    location: location || (draft ? "TBD" : location),
+    country: country || (draft ? "TBD" : country),
     countryFlag: countryFlag || "🌍",
-    region: region as PostFrontmatter["region"],
-    tripType: tripType as PostFrontmatter["tripType"],
+    region: (region || "Europe") as PostFrontmatter["region"],
+    tripType: (tripType.length
+      ? tripType
+      : ["Solo Travel"]) as PostFrontmatter["tripType"],
     tags,
-    coverImage,
-    lat,
-    lng,
-    featured: Boolean(data.featured),
-    content,
+    coverImage:
+      coverImage ||
+      (draft
+        ? "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1600&q=80"
+        : coverImage),
+    lat: hasCoords ? lat : 0,
+    lng: hasCoords ? lng : 0,
+    featured: draft ? false : Boolean(data.featured),
+    draft,
+    content: content || (draft ? "" : content),
   };
 }

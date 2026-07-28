@@ -30,6 +30,7 @@ export type PostFormValues = {
   lat: string;
   lng: string;
   featured: boolean;
+  draft: boolean;
   content: string;
 };
 
@@ -48,6 +49,7 @@ const emptyValues: PostFormValues = {
   lat: "",
   lng: "",
   featured: false,
+  draft: true,
   content: "",
 };
 
@@ -67,6 +69,7 @@ function postToValues(post: Post): PostFormValues {
     lat: String(post.lat),
     lng: String(post.lng),
     featured: Boolean(post.featured),
+    draft: Boolean(post.draft),
     content: post.content,
   };
 }
@@ -85,7 +88,7 @@ export function PostEditor({
   const [slugTouched, setSlugTouched] = useState(mode === "edit");
   const [tab, setTab] = useState<"write" | "preview">("write");
   const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving] = useState<"draft" | "publish" | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
@@ -116,19 +119,26 @@ export function PostEditor({
     });
   }
 
-  async function onSubmit(event: FormEvent) {
-    event.preventDefault();
-    setSaving(true);
+  async function saveStory(asDraft: boolean) {
+    setSaving(asDraft ? "draft" : "publish");
     setError("");
 
-    if (!values.coverImage.trim()) {
-      setSaving(false);
-      setError("Add a cover image upload or paste an image URL.");
+    if (!asDraft && !values.coverImage.trim()) {
+      setSaving(null);
+      setError("Add a cover image upload or paste an image URL before publishing.");
+      return;
+    }
+
+    if (!values.title.trim()) {
+      setSaving(null);
+      setError("Add a title before saving.");
       return;
     }
 
     const payload = {
       ...values,
+      draft: asDraft,
+      featured: asDraft ? false : values.featured,
       lat: Number(values.lat),
       lng: Number(values.lng),
       tags: values.tags
@@ -155,7 +165,7 @@ export function PostEditor({
       via?: "local" | "github";
     } | null;
 
-    setSaving(false);
+    setSaving(null);
 
     if (!response.ok || !data?.post) {
       setError(data?.error || "Could not save story.");
@@ -168,6 +178,11 @@ export function PostEditor({
 
     router.push("/admin");
     router.refresh();
+  }
+
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    await saveStory(false);
   }
 
   async function onDelete() {
@@ -209,11 +224,14 @@ export function PostEditor({
             {mode === "create" ? "New story" : "Edit story"}
           </h1>
           <p className="mt-1 text-sm text-zinc-500">
-            Write in Markdown. On Vercel, saves commit to GitHub and redeploy.
+            {values.draft
+              ? "Currently a draft — hidden from the public site."
+              : "Published — visible on the public site."}{" "}
+            On Vercel, saves commit to GitHub and redeploy.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {mode === "edit" && initialPost && (
+          {mode === "edit" && initialPost && !initialPost.draft && (
             <Button asChild variant="outline" type="button">
               <Link href={`/blog/${initialPost.slug}`} target="_blank">
                 View live
@@ -225,14 +243,29 @@ export function PostEditor({
               type="button"
               variant="outline"
               onClick={onDelete}
-              disabled={deleting}
+              disabled={deleting || Boolean(saving)}
               className="border-red-300 text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-400"
             >
               {deleting ? "Deleting…" : "Delete"}
             </Button>
           )}
-          <Button type="submit" disabled={saving}>
-            {saving ? "Publishing…" : "Publish"}
+          <Button
+            type="button"
+            variant="outline"
+            disabled={Boolean(saving) || deleting}
+            onClick={() => void saveStory(true)}
+          >
+            {saving === "draft" ? "Saving…" : "Save draft"}
+          </Button>
+          <Button
+            type="submit"
+            disabled={Boolean(saving) || deleting}
+          >
+            {saving === "publish"
+              ? "Publishing…"
+              : values.draft
+                ? "Publish"
+                : "Update"}
           </Button>
         </div>
       </div>
@@ -401,7 +434,6 @@ export function PostEditor({
             onChange={(event) => update("content", event.target.value)}
             placeholder={"## Opening\n\nTell the story…\n\n> A memorable line"}
             className="min-h-[420px] w-full resize-y bg-transparent px-4 py-4 font-mono text-sm outline-none"
-            required
           />
         ) : (
           <div className="prose prose-zinc dark:prose-invert max-w-none px-4 py-4">

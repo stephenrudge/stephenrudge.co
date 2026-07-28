@@ -16,7 +16,9 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const posts = getAllPosts().map(({ content: _content, ...post }) => post);
+  const posts = getAllPosts({ includeDrafts: true }).map(
+    ({ content: _content, ...post }) => post,
+  );
   return NextResponse.json({ posts });
 }
 
