@@ -11,8 +11,7 @@ export function Hero() {
       <div
         className="absolute inset-0 -z-10 bg-cover bg-center"
         style={{
-          backgroundImage:
-            "url(https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=2000&q=80)",
+          backgroundImage: "url(/images/hero.jpg)",
         }}
       />
       <div className="absolute inset-0 -z-10 bg-gradient-to-t from-zinc-950 via-zinc-950/55 to-zinc-950/25" />
