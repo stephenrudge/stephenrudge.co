@@ -29,7 +29,7 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
           <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400">
             <span className="inline-flex items-center gap-1">
               <MapPin className="h-3 w-3" />
-              {post.countryFlag} {post.location}
+              {post.location}
             </span>
             <span>{formatDate(post.date)}</span>
             <span className="inline-flex items-center gap-1">
@@ -40,9 +40,11 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
           <h3 className="font-serif text-xl leading-snug text-zinc-900 transition-colors group-hover:text-accent dark:text-zinc-50">
             {post.title}
           </h3>
-          <p className="line-clamp-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-            {post.excerpt}
-          </p>
+          {post.excerpt ? (
+            <p className="line-clamp-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+              {post.excerpt}
+            </p>
+          ) : null}
         </div>
       </Link>
     </motion.article>

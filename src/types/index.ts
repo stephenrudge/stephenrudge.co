@@ -24,7 +24,7 @@ export interface PostFrontmatter {
   excerpt: string;
   location: string;
   country: string;
-  countryFlag: string;
+  countryFlag?: string;
   region: Region;
   tripType: TripType[];
   tags: string[];
@@ -47,7 +47,7 @@ export interface Post extends PostFrontmatter {
 
 export interface Destination {
   country: string;
-  countryFlag: string;
+  countryFlag?: string;
   region: Region;
   cities: string[];
   postCount: number;
@@ -58,7 +58,7 @@ export interface MapPin {
   slug: string;
   title: string;
   location: string;
-  countryFlag: string;
+  countryFlag?: string;
   lat: number;
   lng: number;
 }

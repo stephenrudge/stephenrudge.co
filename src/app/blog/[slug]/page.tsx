@@ -8,7 +8,7 @@ import { ShareButtons } from "@/components/share-buttons";
 import { PostMap } from "@/components/map/map-section";
 import { Gallery } from "@/components/gallery";
 import { MDXImage } from "@/components/mdx/mdx-image";
-import { getAdjacentPosts, getAllPosts, getPostBySlug } from "@/lib/posts";
+import { getAdjacentPosts, getAllPosts, getPostBySlug, hasMapCoords } from "@/lib/posts";
 import { formatDate } from "@/lib/utils";
 
 interface PageProps {
@@ -66,7 +66,7 @@ export default async function BlogPostPage({ params }: PageProps) {
           <div className="flex flex-wrap items-center gap-3 text-sm text-zinc-300">
             <span className="inline-flex items-center gap-1">
               <MapPin className="h-3.5 w-3.5" />
-              {post.countryFlag} {post.location}, {post.country}
+              {post.location}, {post.country}
             </span>
             <span>{formatDate(post.date)}</span>
             <span className="inline-flex items-center gap-1">
@@ -77,7 +77,9 @@ export default async function BlogPostPage({ params }: PageProps) {
           <h1 className="mt-4 font-serif text-4xl leading-tight text-white sm:text-5xl md:text-6xl">
             {post.title}
           </h1>
-          <p className="mt-4 max-w-2xl text-lg text-zinc-300">{post.excerpt}</p>
+          {post.excerpt ? (
+            <p className="mt-4 max-w-2xl text-lg text-zinc-300">{post.excerpt}</p>
+          ) : null}
           <div className="mt-6">
             <ShareButtons title={post.title} />
           </div>
@@ -105,16 +107,18 @@ export default async function BlogPostPage({ params }: PageProps) {
           <Gallery images={post.gallery} />
         ) : null}
 
-        <PostMap
-          pin={{
-            slug: post.slug,
-            title: post.title,
-            location: post.location,
-            countryFlag: post.countryFlag,
-            lat: post.lat,
-            lng: post.lng,
-          }}
-        />
+        {hasMapCoords(post.lat, post.lng) ? (
+          <PostMap
+            pin={{
+              slug: post.slug,
+              title: post.title,
+              location: post.location,
+              countryFlag: "",
+              lat: post.lat,
+              lng: post.lng,
+            }}
+          />
+        ) : null}
 
         <nav className="mt-16 grid gap-6 border-t border-zinc-200 pt-10 sm:grid-cols-2 dark:border-zinc-800">
           {prev ? (

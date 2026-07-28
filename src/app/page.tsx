@@ -20,7 +20,7 @@ export default async function HomePage() {
     <>
       <Hero />
 
-      <MapSection pins={pins} />
+      {pins.length > 0 ? <MapSection pins={pins} /> : null}
 
       <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         <div className="mb-10 flex items-end justify-between gap-4">

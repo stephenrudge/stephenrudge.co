@@ -69,7 +69,7 @@ function postToValues(post: Post): PostFormValues {
     excerpt: post.excerpt,
     location: post.location,
     country: post.country,
-    countryFlag: post.countryFlag,
+    countryFlag: post.countryFlag || "",
     region: post.region,
     tripType: post.tripType,
     tags: post.tags.join(", "),
@@ -203,11 +203,12 @@ export function PostEditor({
 
     const payload = {
       ...values,
+      countryFlag: "",
       draft: saveMode === "draft",
       featured: saveMode === "draft" ? false : values.featured,
       scheduledFor: saveMode === "schedule" ? scheduledFor : undefined,
-      lat: Number(values.lat),
-      lng: Number(values.lng),
+      lat: values.lat.trim() === "" ? "" : Number(values.lat),
+      lng: values.lng.trim() === "" ? "" : Number(values.lng),
       tags: values.tags
         .split(",")
         .map((tag) => tag.trim())
@@ -392,12 +393,11 @@ export function PostEditor({
             stays hidden until then (checked about every minute).
           </span>
         </Field>
-        <Field label="Excerpt" className="sm:col-span-2">
+        <Field label="Excerpt (optional)" className="sm:col-span-2">
           <textarea
             value={values.excerpt}
             onChange={(event) => update("excerpt", event.target.value)}
             className={`${inputClass} min-h-20`}
-            required
           />
         </Field>
         <CoverImageField
@@ -420,14 +420,6 @@ export function PostEditor({
             required
           />
         </Field>
-        <Field label="Country flag emoji">
-          <input
-            value={values.countryFlag}
-            onChange={(event) => update("countryFlag", event.target.value)}
-            placeholder="🇮🇸"
-            className={inputClass}
-          />
-        </Field>
         <Field label="Region">
           <select
             value={values.region}
@@ -443,22 +435,20 @@ export function PostEditor({
             ))}
           </select>
         </Field>
-        <Field label="Latitude">
+        <Field label="Latitude (optional)">
           <input
             value={values.lat}
             onChange={(event) => update("lat", event.target.value)}
             inputMode="decimal"
             className={inputClass}
-            required
           />
         </Field>
-        <Field label="Longitude">
+        <Field label="Longitude (optional)">
           <input
             value={values.lng}
             onChange={(event) => update("lng", event.target.value)}
             inputMode="decimal"
             className={inputClass}
-            required
           />
         </Field>
         <Field label="Tags (comma separated)" className="sm:col-span-2">
