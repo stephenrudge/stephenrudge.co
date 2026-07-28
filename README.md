@@ -68,17 +68,23 @@ In Vercel → Project → Settings → Environment Variables, add:
 | `GITHUB_TOKEN` | fine-grained PAT with **Contents: Read and write** on this repo |
 | `GITHUB_REPO` | `stephenrudge/stephenrudge.co` |
 | `GITHUB_BRANCH` | `main` |
+| `CLOUDINARY_CLOUD_NAME` | from Cloudinary dashboard |
+| `CLOUDINARY_API_KEY` | from Cloudinary dashboard |
+| `CLOUDINARY_API_SECRET` | from Cloudinary dashboard |
+| `CLOUDINARY_FOLDER` | optional, default `stephenrudge/covers` |
 
 Create the token at [GitHub → Settings → Developer settings → Fine-grained tokens](https://github.com/settings/personal-access-tokens). After changing env vars, **redeploy** the project.
 
-### Cover images
+### Cover images (Cloudinary)
 
-In admin, upload a JPEG/PNG/WebP/AVIF (max 5MB) or paste an external URL.
+In admin, upload JPEG/PNG/WebP/AVIF/HEIC (max **4MB**) or paste an external URL.
 
-- **Local:** files save to `public/uploads/`
-- **Vercel:** files are committed to `public/uploads/` via GitHub (same token as stories), then appear after redeploy
+With Cloudinary configured:
+- Images upload to your Cloudinary cloud
+- Auto-resized (max 2400×1600) and optimized (`quality:auto`, modern formats)
+- The story stores the Cloudinary HTTPS URL as `coverImage`
 
-Max size is **4MB** (under Vercel’s request body limit). Use JPEG/PNG/WebP/AVIF — iPhone **HEIC** is not supported unless converted first.
+Without Cloudinary (local only), files fall back to `public/uploads/`.
 
 
 ## Scripts

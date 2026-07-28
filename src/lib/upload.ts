@@ -20,6 +20,8 @@ const EXT_TO_MIME: Record<string, AllowedMimeType> = {
   png: "image/png",
   webp: "image/webp",
   avif: "image/avif",
+  heic: "image/heic",
+  heif: "image/heif",
 };
 
 /** FormData files on the server are not always `instanceof File`. */
@@ -82,7 +84,7 @@ export function resolveMimeType(
   if (fromExt) return fromExt;
 
   throw new Error(
-    "Only JPEG, PNG, WebP, and AVIF images are allowed. HEIC/iPhone formats need conversion first.",
+    "Only JPEG, PNG, WebP, AVIF, or HEIC images are allowed.",
   );
 }
 
