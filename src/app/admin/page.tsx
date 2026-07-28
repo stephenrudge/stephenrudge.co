@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Pencil, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { StoryActions } from "@/components/admin/story-actions";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { getAllPosts } from "@/lib/posts";
 import { formatDate } from "@/lib/utils";
@@ -63,17 +64,7 @@ export default async function AdminDashboardPage() {
                     {post.featured ? " · Featured" : ""}
                   </p>
                 </div>
-                <div className="flex gap-2">
-                  <Button asChild variant="outline" size="sm">
-                    <Link href={`/blog/${post.slug}`}>View</Link>
-                  </Button>
-                  <Button asChild size="sm">
-                    <Link href={`/admin/edit/${post.slug}`}>
-                      <Pencil className="h-3.5 w-3.5" />
-                      Edit
-                    </Link>
-                  </Button>
-                </div>
+                <StoryActions slug={post.slug} title={post.title} />
               </li>
             ))}
           </ul>
