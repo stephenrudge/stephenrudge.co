@@ -1,3 +1,5 @@
+"use client";
+
 import { defineConfig } from "sanity";
 import { structureTool } from "sanity/structure";
 import { presentationTool } from "sanity/presentation";
@@ -12,6 +14,7 @@ const previewOrigin =
 export default defineConfig({
   name: "stephenrudge",
   title: "Stephen Rudge",
+  // projectId/dataset come from env.ts with hardcoded fallbacks (public values).
   projectId,
   dataset,
   basePath: "/studio",

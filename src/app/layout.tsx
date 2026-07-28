@@ -1,12 +1,5 @@
 import type { Metadata } from "next";
-import { draftMode } from "next/headers";
-import { VisualEditing } from "next-sanity/visual-editing";
 import { Geist, Geist_Mono, Newsreader } from "next/font/google";
-import { ThemeProvider } from "@/components/theme-provider";
-import { SiteShell } from "@/components/site-shell";
-import { SanityLive } from "@/sanity/lib/live";
-import { isSanityConfigured } from "@/sanity/env";
-import "./globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,26 +27,22 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://stephenrudge.co"),
 };
 
-export default async function RootLayout({
+/**
+ * Minimal root layout so /studio is not wrapped in site ThemeProvider / Tailwind.
+ * Site chrome lives in `(site)/layout.tsx`.
+ */
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const isDraftMode = (await draftMode()).isEnabled;
-
   return (
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${newsreader.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${newsreader.variable} h-full`}
     >
-      <body className="flex min-h-full flex-col bg-background text-foreground">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <SiteShell>{children}</SiteShell>
-        </ThemeProvider>
-        {isSanityConfigured() ? <SanityLive /> : null}
-        {isDraftMode ? <VisualEditing /> : null}
-      </body>
+      <body className="min-h-full">{children}</body>
     </html>
   );
 }
