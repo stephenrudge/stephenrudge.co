@@ -12,7 +12,7 @@ export function Footer() {
             Travel logs, field notes, and photography.
           </p>
         </div>
-        <div className="flex gap-6 text-sm text-zinc-600 dark:text-zinc-400">
+        <div className="flex flex-wrap gap-6 text-sm text-zinc-600 dark:text-zinc-400">
           <Link href="/blog" className="hover:text-accent">
             Journal
           </Link>
@@ -21,6 +21,9 @@ export function Footer() {
           </Link>
           <Link href="/about" className="hover:text-accent">
             About
+          </Link>
+          <Link href="/contact" className="hover:text-accent">
+            Contact
           </Link>
         </div>
       </div>
