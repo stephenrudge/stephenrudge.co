@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import ReactMarkdown from "react-markdown";
 import { ArrowLeft, ArrowRight, Clock, MapPin } from "lucide-react";
 import { ShareButtons } from "@/components/share-buttons";
 import { PostMap } from "@/components/map/map-section";
 import { Gallery } from "@/components/gallery";
-import { PostBody } from "@/components/portable-text";
+import { MDXImage } from "@/components/mdx/mdx-image";
 import { getAdjacentPosts, getAllPosts, getPostBySlug } from "@/lib/posts";
 import { formatDate } from "@/lib/utils";
 
@@ -14,7 +15,6 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-/** Fallback ISR; Sanity webhook at /api/revalidate clears caches on publish. */
 export const revalidate = 60;
 
 export async function generateStaticParams() {
@@ -86,7 +86,19 @@ export default async function BlogPostPage({ params }: PageProps) {
 
       <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6">
         <div className="prose prose-zinc dark:prose-invert max-w-none prose-headings:font-serif prose-a:text-accent">
-          <PostBody value={post.content} />
+          <ReactMarkdown
+            components={{
+              img: ({ src, alt, title }) => (
+                <MDXImage
+                  src={typeof src === "string" ? src : undefined}
+                  alt={alt || ""}
+                  title={title}
+                />
+              ),
+            }}
+          >
+            {post.content}
+          </ReactMarkdown>
         </div>
 
         {post.gallery && post.gallery.length > 0 ? (

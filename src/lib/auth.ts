@@ -2,7 +2,7 @@ import { createHmac, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 
 export const ADMIN_COOKIE = "sr_admin_session";
-const SESSION_DAYS = 7;
+const SESSION_DAYS = 30;
 
 function getSecret() {
   return (

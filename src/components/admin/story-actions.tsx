@@ -33,7 +33,7 @@ export function StoryActions({
     const data = (await response.json().catch(() => null)) as {
       error?: string;
       message?: string;
-      via?: "local" | "github";
+      via?: "supabase" | "local" | "github";
     } | null;
 
     setDeleting(false);
@@ -43,7 +43,7 @@ export function StoryActions({
       return;
     }
 
-    if (data?.via === "github" && data.message) {
+    if (data?.message) {
       window.alert(data.message);
     }
 

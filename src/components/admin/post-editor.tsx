@@ -79,7 +79,7 @@ function postToValues(post: Post): PostFormValues {
     featured: Boolean(post.featured),
     draft: Boolean(post.draft),
     scheduledFor: toDatetimeLocalValue(post.scheduledFor),
-    content: "",
+    content: post.content,
   };
 }
 
@@ -229,7 +229,7 @@ export function PostEditor({
       error?: string;
       post?: Post;
       message?: string;
-      via?: "local" | "github";
+      via?: "supabase" | "local" | "github";
     } | null;
 
     setSaving(null);
@@ -239,7 +239,7 @@ export function PostEditor({
       return;
     }
 
-    if (data.via === "github" && data.message) {
+    if (data.message) {
       window.alert(data.message);
     }
 
@@ -266,7 +266,7 @@ export function PostEditor({
     const data = (await response.json().catch(() => null)) as {
       error?: string;
       message?: string;
-      via?: "local" | "github";
+      via?: "supabase" | "local" | "github";
     } | null;
     setDeleting(false);
 
@@ -275,7 +275,7 @@ export function PostEditor({
       return;
     }
 
-    if (data?.via === "github" && data.message) {
+    if (data?.message) {
       window.alert(data.message);
     }
 
@@ -291,7 +291,7 @@ export function PostEditor({
             {mode === "create" ? "New story" : "Edit story"}
           </h1>
           <p className="mt-1 text-sm text-zinc-500">
-            {statusLabel} On Vercel, saves commit to GitHub and redeploy.
+            {statusLabel} Saves to Supabase and goes live immediately.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

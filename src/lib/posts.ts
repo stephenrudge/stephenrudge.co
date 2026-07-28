@@ -1,80 +1,59 @@
-import type { PortableTextBlock } from "@portabletext/types";
 import readingTime from "reading-time";
-import type { Destination, MapPin, Post, Region, TripType } from "@/types";
-import { isSanityConfigured } from "@/sanity/env";
-import { sanityFetch } from "@/sanity/lib/live";
+import type { Destination, GalleryImage, MapPin, Post, Region, TripType } from "@/types";
 import {
-  POST_BY_SLUG_QUERY,
-  POSTS_QUERY,
-} from "@/sanity/lib/queries";
+  createSupabaseAdminClient,
+  createSupabaseAnonClient,
+  isSupabaseConfigured,
+} from "@/lib/supabase";
 
 export { filterPosts, REGIONS, TRIP_TYPES } from "@/lib/filters";
 
-type SanityPost = {
-  _id?: string;
-  title?: string;
-  slug?: string;
-  date?: string;
-  excerpt?: string;
-  location?: string;
-  country?: string;
-  countryFlag?: string;
-  region?: Region;
-  tripType?: TripType[];
-  tags?: string[];
-  coverImage?: string | null;
-  coverImageAlt?: string | null;
-  lat?: number;
-  lng?: number;
-  featured?: boolean;
-  scheduledFor?: string | null;
-  gallery?: { src?: string | null; alt?: string | null }[] | null;
-  body?: PortableTextBlock[] | null;
+type DbPost = {
+  id: string;
+  slug: string;
+  title: string;
+  date: string;
+  excerpt: string;
+  location: string;
+  country: string;
+  country_flag: string;
+  region: string;
+  trip_type: string[] | null;
+  tags: string[] | null;
+  cover_image: string;
+  lat: number;
+  lng: number;
+  featured: boolean;
+  draft: boolean;
+  scheduled_for: string | null;
+  content: string;
+  gallery: GalleryImage[] | null;
 };
 
-function portableTextToPlain(blocks: PortableTextBlock[] | null | undefined) {
-  if (!blocks?.length) return "";
-  return blocks
-    .map((block) => {
-      if (block._type !== "block" || !("children" in block)) return "";
-      const children = block.children as { text?: string }[] | undefined;
-      return (children || []).map((child) => child.text || "").join("");
-    })
-    .join("\n");
-}
-
-function mapSanityPost(doc: SanityPost): Post {
-  const body = doc.body || [];
-  const plain = portableTextToPlain(body);
-
+function mapRow(row: DbPost): Post {
   return {
-    slug: doc.slug || "",
-    title: doc.title || "Untitled",
-    date: doc.date || new Date().toISOString().slice(0, 10),
-    excerpt: doc.excerpt || "",
-    location: doc.location || "",
-    country: doc.country || "",
-    countryFlag: doc.countryFlag || "🌍",
-    region: (doc.region || "Europe") as Region,
-    tripType: (doc.tripType?.length ? doc.tripType : ["Solo Travel"]) as TripType[],
-    tags: doc.tags || [],
-    coverImage: doc.coverImage || "",
-    lat: Number.isFinite(doc.lat) ? Number(doc.lat) : 0,
-    lng: Number.isFinite(doc.lng) ? Number(doc.lng) : 0,
-    featured: Boolean(doc.featured),
-    // Sanity drafts are unpublished; published docs are never "draft" here.
-    draft: false,
-    scheduledFor: doc.scheduledFor || undefined,
-    gallery: (doc.gallery || [])
-      .filter((image): image is { src: string; alt?: string | null } =>
-        Boolean(image?.src),
-      )
-      .map((image) => ({
-        src: image.src,
-        alt: image.alt || "",
-      })),
-    content: body,
-    readingTime: readingTime(plain || "story").text,
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    date: row.date,
+    excerpt: row.excerpt,
+    location: row.location,
+    country: row.country,
+    countryFlag: row.country_flag || "🌍",
+    region: (row.region || "Europe") as Region,
+    tripType: (row.trip_type?.length
+      ? row.trip_type
+      : ["Solo Travel"]) as TripType[],
+    tags: row.tags || [],
+    coverImage: row.cover_image || "",
+    lat: Number(row.lat) || 0,
+    lng: Number(row.lng) || 0,
+    featured: Boolean(row.featured),
+    draft: Boolean(row.draft),
+    scheduledFor: row.scheduled_for || undefined,
+    gallery: row.gallery || [],
+    content: row.content || "",
+    readingTime: readingTime(row.content || "story").text,
   };
 }
 
@@ -91,7 +70,6 @@ export function isScheduledPost(
   return Number.isFinite(at) && at > now;
 }
 
-/** Visible on the public site right now. */
 export function isLivePost(
   post: Pick<Post, "draft" | "scheduledFor">,
   now = Date.now(),
@@ -102,37 +80,45 @@ export function isLivePost(
   return Number.isFinite(at) && at <= now;
 }
 
-async function fetchAllSanityPosts(): Promise<Post[]> {
-  if (!isSanityConfigured()) return [];
+async function fetchPosts(includeDrafts: boolean): Promise<Post[]> {
+  if (!isSupabaseConfigured()) return [];
 
   try {
-    const { data } = await sanityFetch({
-      query: POSTS_QUERY,
-    });
-    return ((data as SanityPost[]) || []).map(mapSanityPost);
+    const client = includeDrafts
+      ? createSupabaseAdminClient()
+      : createSupabaseAnonClient();
+
+    const { data, error } = await client
+      .from("posts")
+      .select("*")
+      .order("date", { ascending: false });
+
+    if (error) {
+      console.error("[posts]", error.message);
+      return [];
+    }
+
+    const posts = ((data as DbPost[]) || []).map(mapRow);
+    if (includeDrafts) return posts;
+    return posts.filter((post) => isLivePost(post));
   } catch (error) {
-    console.error("[posts] Failed to fetch from Sanity", error);
+    console.error("[posts]", error);
     return [];
   }
 }
 
-/** Live posts only (public site). Pass `{ includeDrafts: true }` to include scheduled. */
 export async function getAllPosts(options?: {
   includeDrafts?: boolean;
 }): Promise<Post[]> {
-  const posts = await fetchAllSanityPosts();
-  if (options?.includeDrafts) return posts;
-  return posts.filter((post) => isLivePost(post));
+  return fetchPosts(Boolean(options?.includeDrafts));
 }
 
 export async function getDraftPosts(): Promise<Post[]> {
-  // Unpublished drafts are only visible via Sanity Studio / draft mode.
-  return [];
+  return (await fetchPosts(true)).filter(isDraftPost);
 }
 
 export async function getScheduledPosts(): Promise<Post[]> {
-  const posts = await fetchAllSanityPosts();
-  return posts
+  return (await fetchPosts(true))
     .filter(isScheduledPost)
     .sort((a, b) => {
       const aTime = new Date(a.scheduledFor || 0).getTime();
@@ -149,19 +135,26 @@ export async function getPostBySlug(
   slug: string,
   options?: { includeDrafts?: boolean },
 ): Promise<Post | undefined> {
-  if (!isSanityConfigured()) return undefined;
+  if (!isSupabaseConfigured()) return undefined;
 
   try {
-    const { data } = await sanityFetch({
-      query: POST_BY_SLUG_QUERY,
-      params: { slug },
-    });
-    if (!data) return undefined;
-    const post = mapSanityPost(data as SanityPost);
-    if (!isLivePost(post) && !options?.includeDrafts) return undefined;
+    const includeDrafts = Boolean(options?.includeDrafts);
+    const client = includeDrafts
+      ? createSupabaseAdminClient()
+      : createSupabaseAnonClient();
+
+    const { data, error } = await client
+      .from("posts")
+      .select("*")
+      .eq("slug", slug)
+      .maybeSingle();
+
+    if (error || !data) return undefined;
+    const post = mapRow(data as DbPost);
+    if (!isLivePost(post) && !includeDrafts) return undefined;
     return post;
   } catch (error) {
-    console.error("[posts] Failed to fetch post", slug, error);
+    console.error("[posts]", slug, error);
     return undefined;
   }
 }
