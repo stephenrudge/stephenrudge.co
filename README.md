@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# stephenRudge.co
 
-## Getting Started
+Personal travel blog — field notes, photography, and an interactive map of places visited.
 
-First, run the development server:
+## Stack
+
+- **Next.js** (App Router) + TypeScript
+- **Tailwind CSS** + UI primitives
+- **MDX** posts in `content/posts/`
+- **Leaflet** maps
+- **Framer Motion** + **next-themes**
+
+## Getting started
+
+Requires **Node.js 20+** (see `.nvmrc`).
 
 ```bash
+nvm use
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Adding a post
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create a new `.mdx` file in `content/posts/` with frontmatter:
 
-## Learn More
+```yaml
+title: "Your title"
+date: "2026-01-15"
+excerpt: "Short summary"
+location: "City"
+country: "Country"
+countryFlag: "🇮🇸"
+region: "Europe"
+tripType: ["Road Trips", "Photography"]
+tags: ["tag"]
+coverImage: "https://images.unsplash.com/..."
+lat: 64.1466
+lng: -21.9426
+featured: false
+gallery:
+  - src: "https://images.unsplash.com/..."
+    alt: "Caption for photo"
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Admin portal
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Write and publish stories at [http://localhost:3000/admin](http://localhost:3000/admin).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Copy `.env.example` to `.env.local` and set `ADMIN_PASSWORD` + `ADMIN_SECRET`
+2. Sign in at `/admin/login`
+3. Create or edit stories — they save as MDX in `content/posts/` and appear on the public site
 
-## Deploy on Vercel
+Default local password: `changeme`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Hosting note:** the admin writes files to disk. That works for local/dev and hosts with a persistent filesystem. On serverless platforms (e.g. Vercel) published files won’t persist unless you add external storage or a database.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Scripts
+
+- `npm run dev` — development server
+- `npm run build` — production build
+- `npm run start` — serve production build
+- `npm run lint` — ESLint
