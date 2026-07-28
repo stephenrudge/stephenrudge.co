@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { Compass } from "lucide-react";
+import { TipSupport } from "@/components/tip-support";
 
 export const metadata: Metadata = {
   title: "About",
@@ -10,6 +11,10 @@ export const metadata: Metadata = {
 };
 
 export default function AboutPage() {
+  const tipUrl = process.env.NEXT_PUBLIC_TIP_URL?.trim();
+  const tipLabel =
+    process.env.NEXT_PUBLIC_TIP_LABEL?.trim() || "Send coffee or gas money";
+
   return (
     <div>
       <div className="relative isolate min-h-[56vh] w-full overflow-hidden sm:min-h-[64vh]">
@@ -67,6 +72,8 @@ export default function AboutPage() {
             answers land.
           </p>
         </section>
+
+        {tipUrl ? <TipSupport url={tipUrl} label={tipLabel} /> : null}
 
         <p className="mt-14 text-zinc-600 dark:text-zinc-400">
           Want to collaborate on a project, or host me on the road?{" "}
