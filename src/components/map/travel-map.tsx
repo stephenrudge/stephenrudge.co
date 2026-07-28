@@ -45,9 +45,7 @@ export function TravelMap({
         <Marker key={pin.slug} position={[pin.lat, pin.lng]} icon={pinIcon}>
           <Popup>
             <div className="space-y-1 text-sm">
-              <p className="font-medium">
-                {pin.countryFlag} {pin.location}
-              </p>
+              <p className="font-medium">{pin.location}</p>
               <Link href={`/blog/${pin.slug}`} className="text-[#C85A32] underline">
                 {pin.title}
               </Link>

@@ -42,7 +42,7 @@ function StoryList({
         >
           <div>
             <p className="font-medium text-zinc-900 dark:text-zinc-50">
-              {post.countryFlag} {post.title}
+              {post.title}
               {badge === "draft" ? (
                 <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-200">
                   Draft

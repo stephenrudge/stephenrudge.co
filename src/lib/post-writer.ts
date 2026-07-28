@@ -29,7 +29,7 @@ function toRow(input: PostInput) {
     excerpt: input.excerpt,
     location: input.location,
     country: input.country,
-    country_flag: input.countryFlag || "🌍",
+    country_flag: "",
     region: input.region,
     trip_type: input.tripType,
     tags: input.tags,
@@ -111,7 +111,6 @@ export function validatePostInput(body: unknown): PostInput {
   const excerpt = String(data.excerpt || "").trim();
   const location = String(data.location || "").trim();
   const country = String(data.country || "").trim();
-  const countryFlag = String(data.countryFlag || "").trim();
   const coverImage = String(data.coverImage || "").trim();
   const date = String(data.date || "").trim();
   const region = String(data.region || "").trim();
@@ -134,7 +133,6 @@ export function validatePostInput(body: unknown): PostInput {
 
   if (!draft) {
     if (!content) throw new Error("Story content is required.");
-    if (!excerpt) throw new Error("Excerpt is required.");
     if (!location) throw new Error("Location is required.");
     if (!country) throw new Error("Country is required.");
     if (!coverImage) throw new Error("Cover image is required.");
@@ -142,12 +140,14 @@ export function validatePostInput(body: unknown): PostInput {
     if (!region) throw new Error("Region is required.");
   }
 
-  const lat = Number(data.lat);
-  const lng = Number(data.lng);
+  const latRaw = String(data.lat ?? "").trim();
+  const lngRaw = String(data.lng ?? "").trim();
+  const lat = latRaw === "" ? NaN : Number(latRaw);
+  const lng = lngRaw === "" ? NaN : Number(lngRaw);
   const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
 
-  if (!draft && !hasCoords) {
-    throw new Error("Valid latitude and longitude are required.");
+  if ((latRaw !== "" || lngRaw !== "") && !hasCoords) {
+    throw new Error("Latitude and longitude must be valid numbers.");
   }
 
   const tripType = Array.isArray(data.tripType)
@@ -168,10 +168,10 @@ export function validatePostInput(body: unknown): PostInput {
     slug,
     title,
     date: date || new Date().toISOString().slice(0, 10),
-    excerpt: excerpt || (draft ? "Draft in progress" : excerpt),
+    excerpt,
     location: location || (draft ? "TBD" : location),
     country: country || (draft ? "TBD" : country),
-    countryFlag: countryFlag || "🌍",
+    countryFlag: "",
     region: (region || "Europe") as PostFrontmatter["region"],
     tripType: (tripType.length
       ? tripType

@@ -39,7 +39,7 @@ function mapRow(row: DbPost): Post {
     excerpt: row.excerpt,
     location: row.location,
     country: row.country,
-    countryFlag: row.country_flag || "🌍",
+    countryFlag: row.country_flag || "",
     region: (row.region || "Europe") as Region,
     tripType: (row.trip_type?.length
       ? row.trip_type
@@ -176,14 +176,24 @@ export async function getFeaturedPosts(): Promise<Post[]> {
 
 export async function getMapPins(): Promise<MapPin[]> {
   const posts = await getPublishedPosts();
-  return posts.map((post) => ({
-    slug: post.slug,
-    title: post.title,
-    location: post.location,
-    countryFlag: post.countryFlag,
-    lat: post.lat,
-    lng: post.lng,
-  }));
+  return posts
+    .filter((post) => hasMapCoords(post.lat, post.lng))
+    .map((post) => ({
+      slug: post.slug,
+      title: post.title,
+      location: post.location,
+      countryFlag: "",
+      lat: post.lat,
+      lng: post.lng,
+    }));
+}
+
+export function hasMapCoords(lat: number, lng: number) {
+  return (
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    !(lat === 0 && lng === 0)
+  );
 }
 
 export async function getDestinations(): Promise<Destination[]> {
@@ -205,7 +215,7 @@ export async function getDestinations(): Promise<Destination[]> {
     } else {
       byCountry.set(post.country, {
         country: post.country,
-        countryFlag: post.countryFlag,
+        countryFlag: post.countryFlag || "",
         region: post.region,
         cities: [post.location],
         postCount: 1,

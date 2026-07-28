@@ -46,7 +46,7 @@ export default async function DestinationsPage() {
                   className="border-t border-zinc-200 pt-5 dark:border-zinc-800"
                 >
                   <h3 className="text-xl text-zinc-900 dark:text-zinc-50">
-                    {place.countryFlag} {place.country}
+                    {place.country}
                   </h3>
                   <p className="mt-1 text-sm text-zinc-500">
                     {place.postCount} {place.postCount === 1 ? "trip" : "trips"} ·{" "}
