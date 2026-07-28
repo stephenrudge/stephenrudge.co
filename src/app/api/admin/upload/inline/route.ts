@@ -3,9 +3,9 @@ import path from "path";
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import {
-  githubContentConfigured,
-  githubUpsertBinaryFile,
-} from "@/lib/github-content";
+  cloudinaryConfigured,
+  uploadCoverImageToCloudinary,
+} from "@/lib/cloudinary";
 import {
   buildInlineMarkdownSnippet,
   buildInlineUploadFileName,
@@ -19,11 +19,7 @@ import {
 
 export const runtime = "nodejs";
 
-/**
- * Upload an inline body photo into `/public/uploads/`.
- * Locally writes to disk; on Vercel (or when GitHub is configured) also commits
- * the file via the GitHub Contents API so it survives the read-only filesystem.
- */
+/** Upload an inline body photo (Cloudinary preferred; local fallback in dev). */
 export async function POST(request: Request) {
   if (!(await isAdminAuthenticated())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -49,8 +45,6 @@ export async function POST(request: Request) {
         : `upload.${mimeType.split("/")[1] || "jpg"}`;
     const fileName = buildInlineUploadFileName(originalName, mimeType);
     const bytes = Buffer.from(await file.arrayBuffer());
-    const publicPath = publicUploadPath(fileName);
-    const repoPath = `public/uploads/${fileName}`;
 
     const alt =
       typeof altRaw === "string" && altRaw.trim()
@@ -61,32 +55,29 @@ export async function POST(request: Request) {
         ? captionRaw.trim()
         : undefined;
 
-    let via: "local" | "github" | "local+github" = "local";
+    let publicPath = publicUploadPath(fileName);
+    let via: "cloudinary" | "local" = "local";
 
-    if (githubContentConfigured()) {
-      await githubUpsertBinaryFile(
-        repoPath,
+    if (cloudinaryConfigured()) {
+      const uploaded = await uploadCoverImageToCloudinary({
         bytes,
-        `Add inline image: ${fileName}`,
-      );
-      via = "github";
-    }
-
-    // Always write locally when the filesystem is writable so the editor
-    // preview works immediately without waiting for a redeploy.
-    if (process.env.VERCEL !== "1") {
-      const uploadsDir = path.join(process.cwd(), "public", "uploads");
-      await mkdir(uploadsDir, { recursive: true });
-      await writeFile(absoluteUploadPath(fileName), bytes);
-      via = githubContentConfigured() ? "local+github" : "local";
-    } else if (!githubContentConfigured()) {
+        mimeType,
+        fileName,
+      });
+      publicPath = uploaded.url;
+      via = "cloudinary";
+    } else if (process.env.VERCEL === "1" || process.env.CF_PAGES === "1") {
       return NextResponse.json(
         {
           error:
-            "Inline uploads on Vercel need GITHUB_TOKEN and GITHUB_REPO so photos can be saved to /public/uploads via GitHub.",
+            "Cloudinary is required in production for inline photos.",
         },
         { status: 400 },
       );
+    } else {
+      const uploadsDir = path.join(process.cwd(), "public", "uploads");
+      await mkdir(uploadsDir, { recursive: true });
+      await writeFile(absoluteUploadPath(fileName), bytes);
     }
 
     const markdown = buildInlineMarkdownSnippet(alt, publicPath, caption);
@@ -97,11 +88,9 @@ export async function POST(request: Request) {
       via,
       fileName,
       message:
-        via === "github"
-          ? "Image committed to /public/uploads on GitHub. Redeploy for it to appear on the live site."
-          : via === "local+github"
-            ? "Image saved locally and committed to GitHub."
-            : "Image saved to /public/uploads.",
+        via === "cloudinary"
+          ? "Photo uploaded to Cloudinary."
+          : "Photo saved to /public/uploads.",
     });
   } catch (error) {
     const message =

@@ -1,5 +1,3 @@
-import type { PortableTextBlock } from "@portabletext/types";
-
 export type Region =
   | "North America"
   | "South America"
@@ -34,17 +32,16 @@ export interface PostFrontmatter {
   lat: number;
   lng: number;
   featured?: boolean;
-  /** When true, the story is hidden from the public site. */
   draft?: boolean;
-  /** ISO datetime — post goes live automatically after this time (if not a draft). */
   scheduledFor?: string;
   gallery?: GalleryImage[];
 }
 
 export interface Post extends PostFrontmatter {
+  id?: string;
   slug: string;
-  /** Portable Text body from Sanity (inline photos are image blocks). */
-  content: PortableTextBlock[];
+  /** Markdown body (inline photos as ![alt](url)). */
+  content: string;
   readingTime: string;
 }
 

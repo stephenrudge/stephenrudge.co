@@ -56,11 +56,11 @@ export async function POST(request: Request) {
     }
 
     // Local fallback when Cloudinary env vars are not set (dev only).
-    if (process.env.VERCEL === "1") {
+    if (process.env.VERCEL === "1" || process.env.CF_PAGES === "1") {
       return NextResponse.json(
         {
           error:
-            "Cloudinary is required in production. Add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in Vercel.",
+            "Cloudinary is required in production. Add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.",
         },
         { status: 400 },
       );

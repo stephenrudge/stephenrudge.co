@@ -6,7 +6,7 @@ import { PostCard } from "@/components/post-card";
 import { PostFeed } from "@/components/post-feed";
 import { getAllPosts, getFeaturedPosts, getMapPins } from "@/lib/posts";
 
-/** Fallback ISR; Sanity webhook clears caches on publish. */
+/** Revalidate periodically; publishes also call revalidatePath. */
 export const revalidate = 60;
 
 export default async function HomePage() {
