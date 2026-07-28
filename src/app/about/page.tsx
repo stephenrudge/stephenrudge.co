@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { Camera, Compass } from "lucide-react";
+import Link from "next/link";
+import { Compass } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "About",
@@ -67,45 +68,13 @@ export default function AboutPage() {
           </p>
         </section>
 
-        <section className="mt-14">
-          <div className="mb-4 flex items-center gap-2 text-accent">
-            <Camera className="h-5 w-5" />
-            <h2 className="font-serif text-2xl text-zinc-900 dark:text-zinc-50">
-              Travel & photography kit
-            </h2>
-          </div>
-          <div className="space-y-6 text-zinc-600 dark:text-zinc-400">
-            <div>
-              <h3 className="font-medium text-zinc-900 dark:text-zinc-100">
-                Camera
-              </h3>
-              <p className="mt-1">
-                Full-frame mirrorless body, 24–70mm for most walking days,
-                16–35mm for landscapes, and a compact prime for evenings when
-                weight matters.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-medium text-zinc-900 dark:text-zinc-100">
-                Everyday carry
-              </h3>
-              <p className="mt-1">
-                Weatherproof shell, compact tripod, spare batteries, ND filter,
-                offline maps, and a notebook that survives rain better than a
-                phone.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-medium text-zinc-900 dark:text-zinc-100">
-                Computing
-              </h3>
-              <p className="mt-1">
-                Lightweight laptop for culling and writing on the road; external
-                SSD for backups; phone hotspot when cafés fail.
-              </p>
-            </div>
-          </div>
-        </section>
+        <p className="mt-14 text-zinc-600 dark:text-zinc-400">
+          Want to collaborate on a project, or host me on the road?{" "}
+          <Link href="/contact" className="text-accent hover:underline">
+            Get in touch
+          </Link>
+          .
+        </p>
       </div>
     </div>
   );

@@ -13,6 +13,7 @@ const links = [
   { href: "/blog", label: "Journal" },
   { href: "/destinations", label: "Destinations" },
   { href: "/about", label: "About" },
+  { href: "/contact", label: "Contact" },
 ];
 
 export function Header() {
