@@ -12,6 +12,7 @@ function revalidatePublic(slug: string, previousSlug?: string) {
   revalidatePath("/");
   revalidatePath("/blog");
   revalidatePath("/destinations");
+  revalidatePath("/rss.xml");
   revalidatePath(`/blog/${slug}`);
   if (previousSlug && previousSlug !== slug) {
     revalidatePath(`/blog/${previousSlug}`);

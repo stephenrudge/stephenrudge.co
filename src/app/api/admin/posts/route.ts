@@ -8,6 +8,7 @@ function revalidatePublic(slug?: string) {
   revalidatePath("/");
   revalidatePath("/blog");
   revalidatePath("/destinations");
+  revalidatePath("/rss.xml");
   if (slug) revalidatePath(`/blog/${slug}`);
 }
 

@@ -28,6 +28,11 @@ export const metadata: Metadata = {
   description:
     "Travel logs, field notes, and photography by Stephen Rudge. Stories from the road, maps of places visited, and gear notes.",
   metadataBase: new URL("https://stephenrudge.com"),
+  alternates: {
+    types: {
+      "application/rss+xml": "/rss.xml",
+    },
+  },
 };
 
 export default function RootLayout({
