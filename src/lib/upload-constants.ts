@@ -1,5 +1,5 @@
-/** Keep under Vercel’s serverless request body limit (~4.5MB). */
-export const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
+/** Client-side max for direct Cloudinary uploads (Free plan image limit is 10MB). */
+export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 export const ALLOWED_IMAGE_TYPES = {
   "image/jpeg": "jpg",
