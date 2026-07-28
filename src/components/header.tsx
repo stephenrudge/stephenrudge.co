@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
+import { BrandMark } from "@/components/brand-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
@@ -23,9 +24,10 @@ export function Header() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link
           href="/"
-          className="font-serif text-xl tracking-tight text-zinc-900 dark:text-zinc-50"
+          className="inline-flex items-center gap-2.5 font-serif text-xl tracking-tight text-zinc-900 dark:text-zinc-50"
         >
-          Stephen Rudge
+          <BrandMark size={28} />
+          <span>Stephen Rudge</span>
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">
