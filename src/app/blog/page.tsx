@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PostFeed } from "@/components/post-feed";
+import { SubscribeForm } from "@/components/subscribe-form";
 import { getAllPosts } from "@/lib/posts";
 
 export const metadata: Metadata = {
@@ -23,6 +24,9 @@ export default async function BlogIndexPage() {
         </p>
       </div>
       <PostFeed posts={posts} />
+      <section className="mt-20 max-w-xl border-t border-zinc-200 pt-12 dark:border-zinc-800">
+        <SubscribeForm />
+      </section>
     </div>
   );
 }
