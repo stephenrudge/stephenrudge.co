@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { sendContactNotification } from "@/lib/email";
 import {
   createSupabaseAdminClient,
   isSupabaseConfigured,
@@ -70,6 +71,9 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+
+  // Best-effort email; the message is already saved in Supabase.
+  await sendContactNotification({ name, email, intent, message });
 
   return NextResponse.json({
     ok: true,

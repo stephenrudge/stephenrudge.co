@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ContactForm } from "@/components/contact-form";
+import { TipSupport } from "@/components/tip-support";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -9,6 +10,9 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   const contactEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL?.trim();
+  const tipUrl = process.env.NEXT_PUBLIC_TIP_URL?.trim();
+  const tipLabel =
+    process.env.NEXT_PUBLIC_TIP_LABEL?.trim() || "Send coffee or gas money";
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6">
@@ -36,6 +40,8 @@ export default function ContactPage() {
           </a>
         </p>
       ) : null}
+
+      {tipUrl ? <TipSupport url={tipUrl} label={tipLabel} /> : null}
     </div>
   );
 }
