@@ -71,6 +71,14 @@ In Vercel → Project → Settings → Environment Variables, add:
 
 Create the token at [GitHub → Settings → Developer settings → Fine-grained tokens](https://github.com/settings/personal-access-tokens). After changing env vars, **redeploy** the project.
 
+### Cover images
+
+In admin, upload a JPEG/PNG/WebP/AVIF (max 5MB) or paste an external URL.
+
+- **Local:** files save to `public/uploads/`
+- **Vercel:** files are committed to `public/uploads/` via GitHub (same token as stories), then appear after redeploy
+
+
 ## Scripts
 
 - `npm run dev` — development server

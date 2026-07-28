@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
+import { CoverImageField } from "@/components/admin/cover-image-field";
 import { REGIONS, TRIP_TYPES } from "@/lib/filters";
 import { slugify } from "@/lib/slug";
 import type { Post, Region, TripType } from "@/types";
@@ -119,6 +120,12 @@ export function PostEditor({
     event.preventDefault();
     setSaving(true);
     setError("");
+
+    if (!values.coverImage.trim()) {
+      setSaving(false);
+      setError("Add a cover image upload or paste an image URL.");
+      return;
+    }
 
     const payload = {
       ...values,
@@ -273,15 +280,10 @@ export function PostEditor({
             required
           />
         </Field>
-        <Field label="Cover image URL" className="sm:col-span-2">
-          <input
-            value={values.coverImage}
-            onChange={(event) => update("coverImage", event.target.value)}
-            placeholder="https://images.unsplash.com/..."
-            className={inputClass}
-            required
-          />
-        </Field>
+        <CoverImageField
+          value={values.coverImage}
+          onChange={(path) => update("coverImage", path)}
+        />
         <Field label="Location / city">
           <input
             value={values.location}

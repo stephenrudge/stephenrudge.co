@@ -44,8 +44,10 @@ function contentPath(slug: string) {
   return `content/posts/${slug}.mdx`;
 }
 
-function encodeContent(content: string) {
-  return Buffer.from(content, "utf8").toString("base64");
+function encodeContent(content: string | Buffer) {
+  return Buffer.isBuffer(content)
+    ? content.toString("base64")
+    : Buffer.from(content, "utf8").toString("base64");
 }
 
 async function getFileSha(path: string): Promise<string | null> {
@@ -111,5 +113,33 @@ export async function githubDeletePostFile(slug: string) {
   if (!response.ok) {
     const body = await response.text();
     throw new Error(`GitHub delete failed (${response.status}): ${body}`);
+  }
+}
+
+export async function githubUpsertBinaryFile(
+  repoPath: string,
+  bytes: Buffer,
+  message: string,
+) {
+  const sha = await getFileSha(repoPath);
+  const url = `${GITHUB_API}/repos/${getRepo()}/contents/${repoPath}`;
+
+  const response = await fetch(url, {
+    method: "PUT",
+    headers: {
+      ...authHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      message,
+      content: encodeContent(bytes),
+      branch: getBranch(),
+      ...(sha ? { sha } : {}),
+    }),
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`GitHub upload failed (${response.status}): ${body}`);
   }
 }
