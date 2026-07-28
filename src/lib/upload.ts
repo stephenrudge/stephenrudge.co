@@ -14,6 +14,28 @@ export {
   type AllowedMimeType,
 } from "@/lib/upload-constants";
 
+const EXT_TO_MIME: Record<string, AllowedMimeType> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  avif: "image/avif",
+};
+
+/** FormData files on the server are not always `instanceof File`. */
+export function isUploadBlob(
+  value: FormDataEntryValue | null,
+): value is File {
+  if (typeof value !== "object" || value === null) return false;
+  if (typeof value === "string") return false;
+  const blob = value as Blob;
+  return (
+    typeof blob.arrayBuffer === "function" &&
+    typeof blob.size === "number" &&
+    typeof blob.type === "string"
+  );
+}
+
 /** Strip path parts and unsafe characters; keep a short readable base name. */
 export function sanitizeBaseName(filename: string): string {
   const base = path.basename(filename).replace(/\.[^.]+$/, "");
@@ -48,15 +70,30 @@ export function absoluteUploadPath(fileName: string) {
   return path.join(process.cwd(), "public", "uploads", fileName);
 }
 
-export function validateImageFile(file: File) {
-  if (!file || !(file instanceof File) || file.size === 0) {
+export function resolveMimeType(
+  file: Blob & { name?: string },
+): AllowedMimeType {
+  if (isAllowedImageType(file.type)) {
+    return file.type;
+  }
+
+  const ext = path.extname(file.name || "").replace(".", "").toLowerCase();
+  const fromExt = EXT_TO_MIME[ext];
+  if (fromExt) return fromExt;
+
+  throw new Error(
+    "Only JPEG, PNG, WebP, and AVIF images are allowed. HEIC/iPhone formats need conversion first.",
+  );
+}
+
+export function validateImageBlob(file: Blob & { name?: string }) {
+  if (!file || file.size === 0) {
     throw new Error("No image file provided.");
   }
-  if (!isAllowedImageType(file.type)) {
-    throw new Error("Only JPEG, PNG, WebP, and AVIF images are allowed.");
-  }
   if (file.size > MAX_UPLOAD_BYTES) {
-    throw new Error("Image must be 5MB or smaller.");
+    throw new Error(
+      `Image must be ${MAX_UPLOAD_BYTES / (1024 * 1024)}MB or smaller.`,
+    );
   }
-  return file.type;
+  return resolveMimeType(file);
 }

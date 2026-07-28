@@ -9,8 +9,9 @@ import {
 import {
   absoluteUploadPath,
   buildUploadFileName,
+  isUploadBlob,
   publicUploadPath,
-  validateImageFile,
+  validateImageBlob,
 } from "@/lib/upload";
 
 export const runtime = "nodejs";
@@ -24,15 +25,19 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const file = formData.get("file");
 
-    if (!(file instanceof File)) {
+    if (!isUploadBlob(file)) {
       return NextResponse.json(
         { error: "No image file provided." },
         { status: 400 },
       );
     }
 
-    const mimeType = validateImageFile(file);
-    const fileName = buildUploadFileName(file.name, mimeType);
+    const mimeType = validateImageBlob(file);
+    const originalName =
+      "name" in file && typeof file.name === "string" && file.name
+        ? file.name
+        : `upload.${mimeType.split("/")[1]}`;
+    const fileName = buildUploadFileName(originalName, mimeType);
     const bytes = Buffer.from(await file.arrayBuffer());
     const publicPath = publicUploadPath(fileName);
 
@@ -63,6 +68,7 @@ export async function POST(request: Request) {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to upload image.";
+    console.error("[upload]", message, error);
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }
