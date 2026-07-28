@@ -34,6 +34,8 @@ export interface PostFrontmatter {
   featured?: boolean;
   /** When true, the story is hidden from the public site. */
   draft?: boolean;
+  /** ISO datetime — post goes live automatically after this time (if not a draft). */
+  scheduledFor?: string;
   gallery?: GalleryImage[];
 }
 

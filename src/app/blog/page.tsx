@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   description: "All travel stories, field notes, and photography essays.",
 };
 
+export const revalidate = 60;
+
 export default function BlogIndexPage() {
   const posts = getAllPosts();
 

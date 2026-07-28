@@ -37,15 +37,45 @@ export function isDraftPost(post: Pick<Post, "draft">) {
   return Boolean(post.draft);
 }
 
-/** Published posts only (public site). Pass `{ includeDrafts: true }` for admin. */
+export function isScheduledPost(
+  post: Pick<Post, "draft" | "scheduledFor">,
+  now = Date.now(),
+) {
+  if (isDraftPost(post) || !post.scheduledFor) return false;
+  const at = new Date(post.scheduledFor).getTime();
+  return Number.isFinite(at) && at > now;
+}
+
+/** Visible on the public site right now. */
+export function isLivePost(
+  post: Pick<Post, "draft" | "scheduledFor">,
+  now = Date.now(),
+) {
+  if (isDraftPost(post)) return false;
+  if (!post.scheduledFor) return true;
+  const at = new Date(post.scheduledFor).getTime();
+  return Number.isFinite(at) && at <= now;
+}
+
+/** Live posts only (public site). Pass `{ includeDrafts: true }` for admin. */
 export function getAllPosts(options?: { includeDrafts?: boolean }): Post[] {
   const posts = readAllPostsFromDisk();
   if (options?.includeDrafts) return posts;
-  return posts.filter((post) => !isDraftPost(post));
+  return posts.filter((post) => isLivePost(post));
 }
 
 export function getDraftPosts(): Post[] {
   return readAllPostsFromDisk().filter(isDraftPost);
+}
+
+export function getScheduledPosts(): Post[] {
+  return readAllPostsFromDisk()
+    .filter(isScheduledPost)
+    .sort((a, b) => {
+      const aTime = new Date(a.scheduledFor || 0).getTime();
+      const bTime = new Date(b.scheduledFor || 0).getTime();
+      return aTime - bTime;
+    });
 }
 
 export function getPublishedPosts(): Post[] {
@@ -58,7 +88,7 @@ export function getPostBySlug(
 ): Post | undefined {
   const post = readAllPostsFromDisk().find((item) => item.slug === slug);
   if (!post) return undefined;
-  if (isDraftPost(post) && !options?.includeDrafts) return undefined;
+  if (!isLivePost(post) && !options?.includeDrafts) return undefined;
   return post;
 }
 
