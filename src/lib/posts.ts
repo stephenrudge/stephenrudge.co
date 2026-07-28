@@ -23,7 +23,7 @@ function parsePost(filename: string): Post {
   };
 }
 
-export function getAllPosts(): Post[] {
+function readAllPostsFromDisk(): Post[] {
   if (!fs.existsSync(postsDirectory)) return [];
 
   return fs
@@ -33,12 +33,37 @@ export function getAllPosts(): Post[] {
     .sort((a, b) => (a.date < b.date ? 1 : -1));
 }
 
-export function getPostBySlug(slug: string): Post | undefined {
-  return getAllPosts().find((post) => post.slug === slug);
+export function isDraftPost(post: Pick<Post, "draft">) {
+  return Boolean(post.draft);
+}
+
+/** Published posts only (public site). Pass `{ includeDrafts: true }` for admin. */
+export function getAllPosts(options?: { includeDrafts?: boolean }): Post[] {
+  const posts = readAllPostsFromDisk();
+  if (options?.includeDrafts) return posts;
+  return posts.filter((post) => !isDraftPost(post));
+}
+
+export function getDraftPosts(): Post[] {
+  return readAllPostsFromDisk().filter(isDraftPost);
+}
+
+export function getPublishedPosts(): Post[] {
+  return getAllPosts();
+}
+
+export function getPostBySlug(
+  slug: string,
+  options?: { includeDrafts?: boolean },
+): Post | undefined {
+  const post = readAllPostsFromDisk().find((item) => item.slug === slug);
+  if (!post) return undefined;
+  if (isDraftPost(post) && !options?.includeDrafts) return undefined;
+  return post;
 }
 
 export function getAdjacentPosts(slug: string) {
-  const posts = getAllPosts();
+  const posts = getPublishedPosts();
   const index = posts.findIndex((post) => post.slug === slug);
   return {
     prev: index < posts.length - 1 ? posts[index + 1] : null,
@@ -47,13 +72,13 @@ export function getAdjacentPosts(slug: string) {
 }
 
 export function getFeaturedPosts(): Post[] {
-  const posts = getAllPosts();
+  const posts = getPublishedPosts();
   const featured = posts.filter((post) => post.featured);
   return featured.length > 0 ? featured : posts.slice(0, 3);
 }
 
 export function getMapPins(): MapPin[] {
-  return getAllPosts().map((post) => ({
+  return getPublishedPosts().map((post) => ({
     slug: post.slug,
     title: post.title,
     location: post.location,
@@ -64,7 +89,7 @@ export function getMapPins(): MapPin[] {
 }
 
 export function getDestinations(): Destination[] {
-  const posts = getAllPosts();
+  const posts = getPublishedPosts();
   const byCountry = new Map<string, Destination>();
 
   for (const post of posts) {

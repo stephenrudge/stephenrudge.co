@@ -9,9 +9,11 @@ import { Button } from "@/components/ui/button";
 export function StoryActions({
   slug,
   title,
+  isDraft = false,
 }: {
   slug: string;
   title: string;
+  isDraft?: boolean;
 }) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
@@ -51,9 +53,11 @@ export function StoryActions({
   return (
     <div className="flex flex-col items-end gap-1">
       <div className="flex gap-2">
-        <Button asChild variant="outline" size="sm">
-          <Link href={`/blog/${slug}`}>View</Link>
-        </Button>
+        {!isDraft ? (
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/blog/${slug}`}>View</Link>
+          </Button>
+        ) : null}
         <Button asChild size="sm">
           <Link href={`/admin/edit/${slug}`}>
             <Pencil className="h-3.5 w-3.5" />

@@ -18,7 +18,7 @@ export default async function AdminEditPostPage({ params }: PageProps) {
   }
 
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+  const post = getPostBySlug(slug, { includeDrafts: true });
   if (!post) notFound();
 
   return <PostEditor mode="edit" initialPost={post} />;
