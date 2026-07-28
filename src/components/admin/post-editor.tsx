@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
@@ -8,6 +8,10 @@ import { Button } from "@/components/ui/button";
 import { CoverImageField } from "@/components/admin/cover-image-field";
 import { REGIONS, TRIP_TYPES } from "@/lib/filters";
 import { slugify } from "@/lib/slug";
+import {
+  fromDatetimeLocalValue,
+  toDatetimeLocalValue,
+} from "@/lib/utils";
 import type { Post, Region, TripType } from "@/types";
 
 const regions = REGIONS.filter((region): region is Region => region !== "All");
@@ -31,6 +35,7 @@ export type PostFormValues = {
   lng: string;
   featured: boolean;
   draft: boolean;
+  scheduledFor: string;
   content: string;
 };
 
@@ -50,6 +55,7 @@ const emptyValues: PostFormValues = {
   lng: "",
   featured: false,
   draft: true,
+  scheduledFor: "",
   content: "",
 };
 
@@ -70,9 +76,12 @@ function postToValues(post: Post): PostFormValues {
     lng: String(post.lng),
     featured: Boolean(post.featured),
     draft: Boolean(post.draft),
+    scheduledFor: toDatetimeLocalValue(post.scheduledFor),
     content: post.content,
   };
 }
+
+type SaveMode = "draft" | "schedule" | "publish";
 
 export function PostEditor({
   mode,
@@ -88,8 +97,19 @@ export function PostEditor({
   const [slugTouched, setSlugTouched] = useState(mode === "edit");
   const [tab, setTab] = useState<"write" | "preview">("write");
   const [error, setError] = useState("");
-  const [saving, setSaving] = useState<"draft" | "publish" | null>(null);
+  const [saving, setSaving] = useState<SaveMode | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const statusLabel = useMemo(() => {
+    if (values.draft) return "Currently a draft — hidden from the public site.";
+    if (values.scheduledFor) {
+      const when = fromDatetimeLocalValue(values.scheduledFor);
+      if (when && new Date(when).getTime() > Date.now()) {
+        return "Scheduled — will go live at the time below.";
+      }
+    }
+    return "Published — visible on the public site.";
+  }, [values.draft, values.scheduledFor]);
 
   useEffect(() => {
     if (!slugTouched) {
@@ -119,15 +139,9 @@ export function PostEditor({
     });
   }
 
-  async function saveStory(asDraft: boolean) {
-    setSaving(asDraft ? "draft" : "publish");
+  async function saveStory(saveMode: SaveMode) {
+    setSaving(saveMode);
     setError("");
-
-    if (!asDraft && !values.coverImage.trim()) {
-      setSaving(null);
-      setError("Add a cover image upload or paste an image URL before publishing.");
-      return;
-    }
 
     if (!values.title.trim()) {
       setSaving(null);
@@ -135,10 +149,34 @@ export function PostEditor({
       return;
     }
 
+    if (saveMode !== "draft" && !values.coverImage.trim()) {
+      setSaving(null);
+      setError(
+        "Add a cover image upload or paste an image URL before publishing.",
+      );
+      return;
+    }
+
+    let scheduledFor: string | undefined;
+    if (saveMode === "schedule") {
+      scheduledFor = fromDatetimeLocalValue(values.scheduledFor);
+      if (!scheduledFor) {
+        setSaving(null);
+        setError("Pick a future date and time to schedule this story.");
+        return;
+      }
+      if (new Date(scheduledFor).getTime() <= Date.now() + 60_000) {
+        setSaving(null);
+        setError("Schedule time must be at least one minute in the future.");
+        return;
+      }
+    }
+
     const payload = {
       ...values,
-      draft: asDraft,
-      featured: asDraft ? false : values.featured,
+      draft: saveMode === "draft",
+      featured: saveMode === "draft" ? false : values.featured,
+      scheduledFor: saveMode === "schedule" ? scheduledFor : undefined,
       lat: Number(values.lat),
       lng: Number(values.lng),
       tags: values.tags
@@ -182,7 +220,7 @@ export function PostEditor({
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
-    await saveStory(false);
+    await saveStory("publish");
   }
 
   async function onDelete() {
@@ -224,14 +262,17 @@ export function PostEditor({
             {mode === "create" ? "New story" : "Edit story"}
           </h1>
           <p className="mt-1 text-sm text-zinc-500">
-            {values.draft
-              ? "Currently a draft — hidden from the public site."
-              : "Published — visible on the public site."}{" "}
-            On Vercel, saves commit to GitHub and redeploy.
+            {statusLabel} On Vercel, saves commit to GitHub and redeploy.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {mode === "edit" && initialPost && !initialPost.draft && (
+          {mode === "edit" &&
+            initialPost &&
+            !initialPost.draft &&
+            !(
+              initialPost.scheduledFor &&
+              new Date(initialPost.scheduledFor).getTime() > Date.now()
+            ) && (
             <Button asChild variant="outline" type="button">
               <Link href={`/blog/${initialPost.slug}`} target="_blank">
                 View live
@@ -253,18 +294,23 @@ export function PostEditor({
             type="button"
             variant="outline"
             disabled={Boolean(saving) || deleting}
-            onClick={() => void saveStory(true)}
+            onClick={() => void saveStory("draft")}
           >
             {saving === "draft" ? "Saving…" : "Save draft"}
           </Button>
           <Button
-            type="submit"
+            type="button"
+            variant="outline"
             disabled={Boolean(saving) || deleting}
+            onClick={() => void saveStory("schedule")}
           >
+            {saving === "schedule" ? "Scheduling…" : "Schedule"}
+          </Button>
+          <Button type="submit" disabled={Boolean(saving) || deleting}>
             {saving === "publish"
               ? "Publishing…"
-              : values.draft
-                ? "Publish"
+              : values.draft || values.scheduledFor
+                ? "Publish now"
                 : "Update"}
           </Button>
         </div>
@@ -304,6 +350,18 @@ export function PostEditor({
             className={inputClass}
             required
           />
+        </Field>
+        <Field label="Schedule publish (optional)" className="sm:col-span-2">
+          <input
+            type="datetime-local"
+            value={values.scheduledFor}
+            onChange={(event) => update("scheduledFor", event.target.value)}
+            className={inputClass}
+          />
+          <span className="mt-1.5 block text-xs text-zinc-500">
+            Set a future time, then click <strong>Schedule</strong>. The story
+            stays hidden until then (checked about every minute).
+          </span>
         </Field>
         <Field label="Excerpt" className="sm:col-span-2">
           <textarea

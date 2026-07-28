@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   description: "A directory of countries and cities covered in the journal.",
 };
 
+export const revalidate = 60;
+
 export default function DestinationsPage() {
   const destinations = getDestinations();
   const byRegion = destinations.reduce<Record<string, typeof destinations>>(

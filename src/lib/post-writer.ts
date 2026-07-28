@@ -37,13 +37,27 @@ function ensurePostsDir() {
 
 function serializePost(input: PostInput) {
   const { slug: _slug, content, ...frontmatter } = input;
-  return matter.stringify(content.trim() + "\n", {
+  const draft = Boolean(frontmatter.draft);
+  const scheduledFor =
+    !draft && frontmatter.scheduledFor
+      ? String(frontmatter.scheduledFor)
+      : undefined;
+
+  const data: Record<string, unknown> = {
     ...frontmatter,
     tripType: frontmatter.tripType,
     tags: frontmatter.tags,
-    featured: Boolean(frontmatter.featured) && !frontmatter.draft,
-    draft: Boolean(frontmatter.draft),
-  });
+    featured: Boolean(frontmatter.featured) && !draft,
+    draft,
+  };
+
+  if (scheduledFor) {
+    data.scheduledFor = scheduledFor;
+  } else {
+    delete data.scheduledFor;
+  }
+
+  return matter.stringify(content.trim() + "\n", data);
 }
 
 function toPost(input: PostInput): Post {
@@ -145,6 +159,19 @@ export function validatePostInput(body: unknown): PostInput {
   const region = String(data.region || "").trim();
   const slug = slugify(String(data.slug || title));
 
+  let scheduledFor: string | undefined;
+  const rawSchedule = String(data.scheduledFor || "").trim();
+  if (!draft && rawSchedule) {
+    const when = new Date(rawSchedule);
+    if (Number.isNaN(when.getTime())) {
+      throw new Error("Scheduled time is invalid.");
+    }
+    if (when.getTime() <= Date.now() + 60_000) {
+      throw new Error("Schedule time must be at least one minute in the future.");
+    }
+    scheduledFor = when.toISOString();
+  }
+
   if (!title) throw new Error("Title is required.");
 
   if (!draft) {
@@ -201,6 +228,7 @@ export function validatePostInput(body: unknown): PostInput {
     lng: hasCoords ? lng : 0,
     featured: draft ? false : Boolean(data.featured),
     draft,
+    ...(scheduledFor ? { scheduledFor } : {}),
     content: content || (draft ? "" : content),
   };
 }

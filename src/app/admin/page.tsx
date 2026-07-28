@@ -4,8 +4,13 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StoryActions } from "@/components/admin/story-actions";
 import { isAdminAuthenticated } from "@/lib/auth";
-import { getAllPosts, isDraftPost } from "@/lib/posts";
-import { formatDate } from "@/lib/utils";
+import {
+  getAllPosts,
+  isDraftPost,
+  isLivePost,
+  isScheduledPost,
+} from "@/lib/posts";
+import { formatDate, formatDateTime } from "@/lib/utils";
 import type { Post } from "@/types";
 
 export const metadata = {
@@ -16,12 +21,16 @@ export const metadata = {
 function StoryList({
   posts,
   emptyLabel,
+  badge,
 }: {
   posts: Post[];
   emptyLabel: string;
+  badge?: "draft" | "scheduled";
 }) {
   if (posts.length === 0) {
-    return <p className="px-5 py-8 text-center text-sm text-zinc-500">{emptyLabel}</p>;
+    return (
+      <p className="px-5 py-8 text-center text-sm text-zinc-500">{emptyLabel}</p>
+    );
   }
 
   return (
@@ -34,21 +43,29 @@ function StoryList({
           <div>
             <p className="font-medium text-zinc-900 dark:text-zinc-50">
               {post.countryFlag} {post.title}
-              {isDraftPost(post) ? (
+              {badge === "draft" ? (
                 <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-200">
                   Draft
+                </span>
+              ) : null}
+              {badge === "scheduled" ? (
+                <span className="ml-2 rounded bg-sky-100 px-1.5 py-0.5 text-xs font-medium text-sky-800 dark:bg-sky-950 dark:text-sky-200">
+                  Scheduled
                 </span>
               ) : null}
             </p>
             <p className="mt-1 text-sm text-zinc-500">
               {formatDate(post.date)} · {post.location}, {post.country}
               {post.featured ? " · Featured" : ""}
+              {badge === "scheduled" && post.scheduledFor
+                ? ` · Goes live ${formatDateTime(post.scheduledFor)}`
+                : ""}
             </p>
           </div>
           <StoryActions
             slug={post.slug}
             title={post.title}
-            isDraft={isDraftPost(post)}
+            canViewPublic={isLivePost(post)}
           />
         </li>
       ))}
@@ -62,7 +79,14 @@ export default async function AdminDashboardPage() {
   }
 
   const posts = getAllPosts({ includeDrafts: true });
-  const published = posts.filter((post) => !isDraftPost(post));
+  const published = posts.filter(isLivePost);
+  const scheduled = posts
+    .filter(isScheduledPost)
+    .sort((a, b) => {
+      const aTime = new Date(a.scheduledFor || 0).getTime();
+      const bTime = new Date(b.scheduledFor || 0).getTime();
+      return aTime - bTime;
+    });
   const drafts = posts.filter(isDraftPost);
 
   return (
@@ -73,9 +97,9 @@ export default async function AdminDashboardPage() {
             Stories
           </h1>
           <p className="mt-1 text-sm text-zinc-500">
-            {published.length} published · {drafts.length}{" "}
-            {drafts.length === 1 ? "draft" : "drafts"}. On Vercel, changes
-            commit to GitHub and redeploy in about a minute.
+            {published.length} live · {scheduled.length} scheduled ·{" "}
+            {drafts.length} {drafts.length === 1 ? "draft" : "drafts"}. On
+            Vercel, changes commit to GitHub and redeploy in about a minute.
           </p>
         </div>
         <Button asChild>
@@ -91,28 +115,41 @@ export default async function AdminDashboardPage() {
           Published
         </h2>
         <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+          <StoryList posts={published} emptyLabel="No published stories yet." />
+        </div>
+      </section>
+
+      <section>
+        <div className="mb-3">
+          <h2 className="font-serif text-xl text-zinc-900 dark:text-zinc-50">
+            Scheduled
+          </h2>
+          <p className="mt-1 text-sm text-zinc-500">
+            Ready to go live automatically at the scheduled time.
+          </p>
+        </div>
+        <div className="overflow-hidden rounded-lg border border-dashed border-sky-300/80 bg-sky-50/40 dark:border-sky-900 dark:bg-sky-950/20">
           <StoryList
-            posts={published}
-            emptyLabel="No published stories yet."
+            posts={scheduled}
+            badge="scheduled"
+            emptyLabel="No scheduled stories. Set a future time and click Schedule."
           />
         </div>
       </section>
 
       <section>
-        <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <h2 className="font-serif text-xl text-zinc-900 dark:text-zinc-50">
-              Drafts
-            </h2>
-            <p className="mt-1 text-sm text-zinc-500">
-              Work-in-progress stories — hidden from the public site until you
-              publish.
-            </p>
-          </div>
+        <div className="mb-3">
+          <h2 className="font-serif text-xl text-zinc-900 dark:text-zinc-50">
+            Drafts
+          </h2>
+          <p className="mt-1 text-sm text-zinc-500">
+            Work-in-progress stories — hidden until you schedule or publish.
+          </p>
         </div>
         <div className="overflow-hidden rounded-lg border border-dashed border-amber-300/80 bg-amber-50/40 dark:border-amber-900 dark:bg-amber-950/20">
           <StoryList
             posts={drafts}
+            badge="draft"
             emptyLabel="No drafts yet. Save a story as a draft to write ahead."
           />
         </div>

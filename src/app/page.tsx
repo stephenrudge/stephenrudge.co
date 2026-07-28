@@ -6,6 +6,9 @@ import { PostCard } from "@/components/post-card";
 import { PostFeed } from "@/components/post-feed";
 import { getAllPosts, getFeaturedPosts, getMapPins } from "@/lib/posts";
 
+/** Recheck scheduled posts without a full redeploy. */
+export const revalidate = 60;
+
 export default function HomePage() {
   const featured = getFeaturedPosts();
   const allPosts = getAllPosts();
