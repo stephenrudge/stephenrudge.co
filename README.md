@@ -78,6 +78,8 @@ In admin, upload a JPEG/PNG/WebP/AVIF (max 5MB) or paste an external URL.
 - **Local:** files save to `public/uploads/`
 - **Vercel:** files are committed to `public/uploads/` via GitHub (same token as stories), then appear after redeploy
 
+Max size is **4MB** (under Vercel’s request body limit). Use JPEG/PNG/WebP/AVIF — iPhone **HEIC** is not supported unless converted first.
+
 
 ## Scripts
 

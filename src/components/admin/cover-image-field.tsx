@@ -46,15 +46,26 @@ export function CoverImageField({
       method: "POST",
       body,
     });
-    const data = (await response.json().catch(() => null)) as {
-      error?: string;
-      path?: string;
-    } | null;
+
+    const raw = await response.text();
+    let data: { error?: string; path?: string } | null = null;
+    try {
+      data = raw ? (JSON.parse(raw) as { error?: string; path?: string }) : null;
+    } catch {
+      data = null;
+    }
 
     setUploading(false);
 
     if (!response.ok || !data?.path) {
-      setError(data?.error || "Upload failed.");
+      const detail =
+        data?.error ||
+        (response.status === 413
+          ? "Image is too large for the server (max 4MB)."
+          : response.status === 401
+            ? "Session expired — sign in again at /admin/login."
+            : raw?.slice(0, 180) || `Upload failed (${response.status}).`);
+      setError(detail);
       return;
     }
 
@@ -154,7 +165,7 @@ export function CoverImageField({
                 : "Drop an image here or click to upload"}
             </span>
             <span className="text-xs text-zinc-500">
-              JPEG, PNG, WebP, or AVIF · max {maxMb}MB
+              JPEG, PNG, WebP, or AVIF · max {maxMb}MB (not HEIC)
             </span>
           </button>
         )}
