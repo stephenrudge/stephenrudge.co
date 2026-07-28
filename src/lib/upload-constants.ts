@@ -6,6 +6,8 @@ export const ALLOWED_IMAGE_TYPES = {
   "image/png": "png",
   "image/webp": "webp",
   "image/avif": "avif",
+  "image/heic": "heic",
+  "image/heif": "heif",
 } as const;
 
 export type AllowedMimeType = keyof typeof ALLOWED_IMAGE_TYPES;

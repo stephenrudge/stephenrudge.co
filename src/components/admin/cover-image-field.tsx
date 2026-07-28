@@ -165,7 +165,8 @@ export function CoverImageField({
                 : "Drop an image here or click to upload"}
             </span>
             <span className="text-xs text-zinc-500">
-              JPEG, PNG, WebP, or AVIF · max {maxMb}MB (not HEIC)
+              JPEG, PNG, WebP, AVIF, or HEIC · max {maxMb}MB · optimized by
+              Cloudinary
             </span>
           </button>
         )}
@@ -173,7 +174,7 @@ export function CoverImageField({
         <input
           ref={inputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/avif"
+          accept="image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif,.heic,.heif"
           className="hidden"
           onChange={(event) => onFileChange(event.target.files)}
         />
