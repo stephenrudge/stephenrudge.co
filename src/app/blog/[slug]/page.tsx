@@ -2,12 +2,11 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { MDXRemote } from "next-mdx-remote/rsc";
 import { ArrowLeft, ArrowRight, Clock, MapPin } from "lucide-react";
 import { ShareButtons } from "@/components/share-buttons";
 import { PostMap } from "@/components/map/map-section";
 import { Gallery } from "@/components/gallery";
-import { mdxComponents } from "@/lib/mdx-components";
+import { PostBody } from "@/components/portable-text";
 import { getAdjacentPosts, getAllPosts, getPostBySlug } from "@/lib/posts";
 import { formatDate } from "@/lib/utils";
 
@@ -15,17 +14,19 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
+/** Fallback ISR; Sanity webhook at /api/revalidate clears caches on publish. */
 export const revalidate = 60;
 
-export function generateStaticParams() {
-  return getAllPosts().map((post) => ({ slug: post.slug }));
+export async function generateStaticParams() {
+  const posts = await getAllPosts();
+  return posts.map((post) => ({ slug: post.slug }));
 }
 
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+  const post = await getPostBySlug(slug);
   if (!post) return {};
   return {
     title: post.title,
@@ -33,29 +34,33 @@ export async function generateMetadata({
     openGraph: {
       title: post.title,
       description: post.excerpt,
-      images: [post.coverImage],
+      images: post.coverImage ? [post.coverImage] : [],
     },
   };
 }
 
 export default async function BlogPostPage({ params }: PageProps) {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+  const post = await getPostBySlug(slug);
   if (!post) notFound();
 
-  const { prev, next } = getAdjacentPosts(slug);
+  const { prev, next } = await getAdjacentPosts(slug);
 
   return (
     <article>
       <header className="relative isolate min-h-[70vh] overflow-hidden">
-        <Image
-          src={post.coverImage}
-          alt={post.title}
-          fill
-          priority
-          className="object-cover"
-          sizes="100vw"
-        />
+        {post.coverImage ? (
+          <Image
+            src={post.coverImage}
+            alt={post.title}
+            fill
+            priority
+            className="object-cover"
+            sizes="100vw"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-zinc-800" />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/50 to-zinc-950/20" />
         <div className="relative mx-auto flex min-h-[70vh] max-w-3xl flex-col justify-end px-4 pb-16 pt-28 sm:px-6">
           <div className="flex flex-wrap items-center gap-3 text-sm text-zinc-300">
@@ -81,7 +86,7 @@ export default async function BlogPostPage({ params }: PageProps) {
 
       <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6">
         <div className="prose prose-zinc dark:prose-invert max-w-none prose-headings:font-serif prose-a:text-accent">
-          <MDXRemote source={post.content} components={mdxComponents} />
+          <PostBody value={post.content} />
         </div>
 
         {post.gallery && post.gallery.length > 0 ? (

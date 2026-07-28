@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 
 export const revalidate = 60;
 
-export default function BlogIndexPage() {
-  const posts = getAllPosts();
+export default async function BlogIndexPage() {
+  const posts = await getAllPosts();
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">

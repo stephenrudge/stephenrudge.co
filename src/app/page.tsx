@@ -6,13 +6,15 @@ import { PostCard } from "@/components/post-card";
 import { PostFeed } from "@/components/post-feed";
 import { getAllPosts, getFeaturedPosts, getMapPins } from "@/lib/posts";
 
-/** Recheck scheduled posts without a full redeploy. */
+/** Fallback ISR; Sanity webhook clears caches on publish. */
 export const revalidate = 60;
 
-export default function HomePage() {
-  const featured = getFeaturedPosts();
-  const allPosts = getAllPosts();
-  const pins = getMapPins();
+export default async function HomePage() {
+  const [featured, allPosts, pins] = await Promise.all([
+    getFeaturedPosts(),
+    getAllPosts(),
+    getMapPins(),
+  ]);
 
   return (
     <>

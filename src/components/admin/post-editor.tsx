@@ -79,7 +79,7 @@ function postToValues(post: Post): PostFormValues {
     featured: Boolean(post.featured),
     draft: Boolean(post.draft),
     scheduledFor: toDatetimeLocalValue(post.scheduledFor),
-    content: post.content,
+    content: "",
   };
 }
 
