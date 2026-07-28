@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 
 export const revalidate = 60;
 
-export default function DestinationsPage() {
-  const destinations = getDestinations();
+export default async function DestinationsPage() {
+  const destinations = await getDestinations();
   const byRegion = destinations.reduce<Record<string, typeof destinations>>(
     (acc, destination) => {
       const list = acc[destination.region] ?? [];

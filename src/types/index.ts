@@ -1,3 +1,5 @@
+import type { PortableTextBlock } from "@portabletext/types";
+
 export type Region =
   | "North America"
   | "South America"
@@ -41,7 +43,8 @@ export interface PostFrontmatter {
 
 export interface Post extends PostFrontmatter {
   slug: string;
-  content: string;
+  /** Portable Text body from Sanity (inline photos are image blocks). */
+  content: PortableTextBlock[];
   readingTime: string;
 }
 
