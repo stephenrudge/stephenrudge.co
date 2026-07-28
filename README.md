@@ -77,14 +77,18 @@ Create the token at [GitHub → Settings → Developer settings → Fine-grained
 
 ### Cover images (Cloudinary)
 
-In admin, upload JPEG/PNG/WebP/AVIF/HEIC (max **4MB**) or paste an external URL.
+In admin, upload JPEG/PNG/WebP/AVIF/HEIC (max **10MB**) or paste an external URL.
+
+Uploads go **directly to Cloudinary** from the browser (signed), so they are not limited by Vercel’s ~4.5MB request body cap.
 
 With Cloudinary configured:
 - Images upload to your Cloudinary cloud
 - Auto-resized (max 2400×1600) and optimized (`quality:auto`, modern formats)
 - The story stores the Cloudinary HTTPS URL as `coverImage`
 
-Without Cloudinary (local only), files fall back to `public/uploads/`.
+Cloudinary **Free** allows images up to **10MB**. Paid plans support larger files — raise `MAX_UPLOAD_BYTES` in `src/lib/upload-constants.ts` if you upgrade.
+
+Without Cloudinary (local only), files fall back to `public/uploads/` with a **4MB** limit.
 
 
 ## Scripts

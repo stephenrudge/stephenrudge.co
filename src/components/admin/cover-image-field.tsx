@@ -8,6 +8,18 @@ import { MAX_UPLOAD_BYTES } from "@/lib/upload-constants";
 const inputClass =
   "w-full border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-accent dark:border-zinc-700 dark:bg-zinc-950";
 
+type SignResponse = {
+  error?: string;
+  cloudinary?: boolean;
+  cloudName?: string;
+  apiKey?: string;
+  timestamp?: number;
+  signature?: string;
+  folder?: string;
+  publicId?: string;
+  eager?: string;
+};
+
 export function CoverImageField({
   value,
   onChange,
@@ -29,15 +41,78 @@ export function CoverImageField({
     };
   }, [previewUrl]);
 
-  async function uploadFile(file: File) {
-    setError("");
-    setUploading(true);
+  async function uploadViaCloudinary(file: File) {
+    const signResponse = await fetch("/api/admin/upload/sign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fileName: file.name,
+        mimeType: file.type,
+        size: file.size,
+      }),
+    });
 
-    if (previewUrl?.startsWith("blob:")) {
-      URL.revokeObjectURL(previewUrl);
+    const signRaw = await signResponse.text();
+    let sign: SignResponse | null = null;
+    try {
+      sign = signRaw ? (JSON.parse(signRaw) as SignResponse) : null;
+    } catch {
+      sign = null;
     }
-    const localPreview = URL.createObjectURL(file);
-    setPreviewUrl(localPreview);
+
+    if (signResponse.status === 503 || sign?.cloudinary === false) {
+      return uploadViaServer(file);
+    }
+
+    if (!signResponse.ok || !sign?.signature || !sign.cloudName || !sign.apiKey) {
+      throw new Error(
+        sign?.error ||
+          (signResponse.status === 401
+            ? "Session expired — sign in again at /admin/login."
+            : "Could not prepare Cloudinary upload."),
+      );
+    }
+
+    const body = new FormData();
+    body.append("file", file);
+    body.append("api_key", sign.apiKey);
+    body.append("timestamp", String(sign.timestamp));
+    body.append("signature", sign.signature);
+    body.append("folder", sign.folder || "stephenrudge/covers");
+    body.append("public_id", sign.publicId || "");
+    if (sign.eager) body.append("eager", sign.eager);
+    body.append("overwrite", "false");
+
+    const uploadResponse = await fetch(
+      `https://api.cloudinary.com/v1_1/${sign.cloudName}/image/upload`,
+      { method: "POST", body },
+    );
+
+    const uploadData = (await uploadResponse.json().catch(() => null)) as {
+      secure_url?: string;
+      eager?: { secure_url?: string }[];
+      error?: { message?: string };
+    } | null;
+
+    const url =
+      uploadData?.eager?.[0]?.secure_url || uploadData?.secure_url;
+
+    if (!uploadResponse.ok || !url) {
+      throw new Error(
+        uploadData?.error?.message ||
+          `Cloudinary upload failed (${uploadResponse.status}).`,
+      );
+    }
+
+    return url;
+  }
+
+  async function uploadViaServer(file: File) {
+    if (file.size > 4 * 1024 * 1024) {
+      throw new Error(
+        "Without Cloudinary, uploads are limited to 4MB. Add Cloudinary env vars for larger photos.",
+      );
+    }
 
     const body = new FormData();
     body.append("file", file);
@@ -55,21 +130,44 @@ export function CoverImageField({
       data = null;
     }
 
-    setUploading(false);
-
     if (!response.ok || !data?.path) {
-      const detail =
+      throw new Error(
         data?.error ||
-        (response.status === 413
-          ? "Image is too large for the server (max 4MB)."
-          : response.status === 401
-            ? "Session expired — sign in again at /admin/login."
-            : raw?.slice(0, 180) || `Upload failed (${response.status}).`);
-      setError(detail);
-      return;
+          (response.status === 413
+            ? "Image is too large for the server."
+            : response.status === 401
+              ? "Session expired — sign in again at /admin/login."
+              : raw?.slice(0, 180) || `Upload failed (${response.status}).`),
+      );
     }
 
-    onChange(data.path);
+    return data.path;
+  }
+
+  async function uploadFile(file: File) {
+    setError("");
+    setUploading(true);
+
+    if (previewUrl?.startsWith("blob:")) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    const localPreview = URL.createObjectURL(file);
+    setPreviewUrl(localPreview);
+
+    try {
+      if (file.size > MAX_UPLOAD_BYTES) {
+        throw new Error(
+          `Image must be ${MAX_UPLOAD_BYTES / (1024 * 1024)}MB or smaller.`,
+        );
+      }
+
+      const path = await uploadViaCloudinary(file);
+      onChange(path);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed.");
+    } finally {
+      setUploading(false);
+    }
   }
 
   function onFileChange(fileList: FileList | null) {
@@ -148,7 +246,9 @@ export function CoverImageField({
               </Button>
             </div>
             {value ? (
-              <p className="text-center text-xs text-zinc-500">{value}</p>
+              <p className="break-all text-center text-xs text-zinc-500">
+                {value}
+              </p>
             ) : null}
           </div>
         ) : (
@@ -165,7 +265,7 @@ export function CoverImageField({
                 : "Drop an image here or click to upload"}
             </span>
             <span className="text-xs text-zinc-500">
-              JPEG, PNG, WebP, AVIF, or HEIC · max {maxMb}MB · optimized by
+              JPEG, PNG, WebP, AVIF, or HEIC · max {maxMb}MB · direct to
               Cloudinary
             </span>
           </button>
