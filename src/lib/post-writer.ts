@@ -148,7 +148,7 @@ export function validatePostInput(body: unknown): PostInput {
   if (!excerpt) throw new Error("Excerpt is required.");
   if (!location) throw new Error("Location is required.");
   if (!country) throw new Error("Country is required.");
-  if (!coverImage) throw new Error("Cover image URL is required.");
+  if (!coverImage) throw new Error("Cover image is required.");
   if (!date) throw new Error("Date is required.");
   if (!region) throw new Error("Region is required.");
 

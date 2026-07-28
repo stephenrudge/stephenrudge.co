@@ -40,3 +40,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local uploads (keep folder; files are committed via GitHub on Vercel)
+/public/uploads/*
+!/public/uploads/.gitkeep
