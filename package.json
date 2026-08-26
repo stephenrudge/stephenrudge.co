@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "portfolio:hearth": "node scripts/build-hearth-demo.mjs",
     "start": "next start",
     "lint": "eslint"
   },
