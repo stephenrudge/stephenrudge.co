@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 const links = [
   { href: "/", label: "Home" },
   { href: "/blog", label: "Journal" },
+  { href: "/portfolio", label: "Portfolio" },
   { href: "/destinations", label: "Destinations" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
@@ -38,7 +39,8 @@ export function Header() {
               href={link.href}
               className={cn(
                 "text-sm transition-colors hover:text-accent",
-                pathname === link.href
+                pathname === link.href ||
+                  (link.href !== "/" && pathname.startsWith(`${link.href}/`))
                   ? "text-accent"
                   : "text-zinc-600 dark:text-zinc-400",
               )}
@@ -72,7 +74,8 @@ export function Header() {
                 onClick={() => setOpen(false)}
                 className={cn(
                   "text-base",
-                  pathname === link.href
+                  pathname === link.href ||
+                    (link.href !== "/" && pathname.startsWith(`${link.href}/`))
                     ? "text-accent"
                     : "text-zinc-700 dark:text-zinc-300",
                 )}

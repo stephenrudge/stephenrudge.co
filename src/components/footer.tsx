@@ -16,6 +16,9 @@ export function Footer() {
           <Link href="/blog" className="hover:text-accent">
             Journal
           </Link>
+          <Link href="/portfolio" className="hover:text-accent">
+            Portfolio
+          </Link>
           <Link href="/destinations" className="hover:text-accent">
             Destinations
           </Link>
