@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "portfolio:hearth": "node scripts/build-hearth-demo.mjs",
     "start": "next start",
     "lint": "eslint"
   },
@@ -28,6 +29,7 @@
     "react-leaflet": "^5.0.0",
     "react-markdown": "^10.1.0",
     "reading-time": "^1.5.0",
+    "resend": "^6.18.1",
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {

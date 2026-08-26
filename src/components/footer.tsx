@@ -27,8 +27,23 @@ export function Footer() {
             </Link>
           </div>
         </div>
-
-        <SubscribeForm compact />
+        <div className="flex flex-wrap gap-6 text-sm text-zinc-600 dark:text-zinc-400">
+          <Link href="/blog" className="hover:text-accent">
+            Journal
+          </Link>
+          <Link href="/portfolio" className="hover:text-accent">
+            Portfolio
+          </Link>
+          <Link href="/destinations" className="hover:text-accent">
+            Destinations
+          </Link>
+          <Link href="/about" className="hover:text-accent">
+            About
+          </Link>
+          <Link href="/contact" className="hover:text-accent">
+            Contact
+          </Link>
+        </div>
       </div>
       <div className="border-t border-zinc-200 py-4 text-center text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-500">
         © {new Date().getFullYear()} Stephen Rudge · stephenRudge.co
