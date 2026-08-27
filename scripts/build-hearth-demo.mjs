@@ -4,6 +4,7 @@
  * so the portfolio iframe works without a separate dev server.
  *
  * Requires hearth-ember-co at ~/Projects/hearth-ember-co (override with HEARTH_EMBER_PATH).
+ * Uses PORTFOLIO_EXPORT=1 — see hearth-ember-co/next.config.ts (no config overwrite).
  */
 import { execSync } from "node:child_process";
 import fs from "node:fs";
@@ -18,25 +19,12 @@ const hearthRoot =
   path.join(os.homedir(), "Projects", "hearth-ember-co");
 const dest = path.join(websiteRoot, "public", "demos", "hearth-ember-co");
 
-const exportConfig = `import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  output: "export",
-  basePath: "/demos/hearth-ember-co",
-  trailingSlash: true,
-  images: {
-    unoptimized: true,
-    remotePatterns: [
-      { protocol: "https", hostname: "images.unsplash.com" },
-    ],
-  },
-};
-
-export default nextConfig;
-`;
-
-function run(cmd, cwd) {
-  execSync(cmd, { cwd, stdio: "inherit" });
+function run(cmd, cwd, env = {}) {
+  execSync(cmd, {
+    cwd,
+    stdio: "inherit",
+    env: { ...process.env, ...env },
+  });
 }
 
 if (!fs.existsSync(hearthRoot)) {
@@ -45,31 +33,15 @@ if (!fs.existsSync(hearthRoot)) {
   process.exit(1);
 }
 
-const configPath = path.join(hearthRoot, "next.config.ts");
-const backupPath = path.join(hearthRoot, "next.config.ts.portfolio-backup");
-const hadBackup = fs.existsSync(backupPath);
+console.log("Building static export (PORTFOLIO_EXPORT=1)…");
+run("npm run build", hearthRoot, { PORTFOLIO_EXPORT: "1" });
 
-if (!hadBackup) {
-  fs.copyFileSync(configPath, backupPath);
+const outDir = path.join(hearthRoot, "out");
+if (!fs.existsSync(outDir)) {
+  throw new Error("Build did not produce an out/ directory.");
 }
 
-try {
-  fs.writeFileSync(configPath, exportConfig);
-  console.log("Building static export…");
-  run("npm run build", hearthRoot);
-
-  const outDir = path.join(hearthRoot, "out");
-  if (!fs.existsSync(outDir)) {
-    throw new Error("Build did not produce an out/ directory.");
-  }
-
-  fs.rmSync(dest, { recursive: true, force: true });
-  fs.mkdirSync(path.dirname(dest), { recursive: true });
-  fs.cpSync(outDir, dest, { recursive: true });
-  console.log(`Copied demo to ${dest}`);
-} finally {
-  if (fs.existsSync(backupPath)) {
-    fs.copyFileSync(backupPath, configPath);
-    if (!hadBackup) fs.unlinkSync(backupPath);
-  }
-}
+fs.rmSync(dest, { recursive: true, force: true });
+fs.mkdirSync(path.dirname(dest), { recursive: true });
+fs.cpSync(outDir, dest, { recursive: true });
+console.log(`Copied demo to ${dest}`);
