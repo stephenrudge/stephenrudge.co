@@ -17,7 +17,7 @@ export const portfolioItems: PortfolioItem[] = [
       "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=1200&h=900&fit=crop",
     imageAlt: "Baker shaping sourdough beside a wood-fired oven",
     category: "Web app",
-    year: "2025",
+    year: "2026",
     stack: ["Next.js", "React", "Tailwind CSS", "Framer Motion", "Zustand"],
     bundledDemoPath: "/demos/hearth-ember-co/index.html",
     demoUrlEnv: "NEXT_PUBLIC_HEARTH_EMBER_DEMO_URL",
